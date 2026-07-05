@@ -27,6 +27,8 @@ boan-sensei todo
 
 For specialized reports, use `--mode blue`, `--mode red`, or `--mode purple`.
 
+For deeper domain-specific review, consult the top-level `skills/<name>/SKILL.md` drafts such as `skills/xss-review/SKILL.md` or `skills/token-auth-review/SKILL.md`. These drafts are guidance only and are not wired to a `--skill` CLI option.
+
 Mode examples:
 
 ```bash
@@ -55,6 +57,8 @@ Generated files:
 ## Required Language
 
 Do not describe boan-sensei output as confirmed security impact.
+
+Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. It only summarizes review questions from an attacker's perspective based on local code signals.
 
 Use cautious language:
 

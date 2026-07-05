@@ -20,6 +20,8 @@ pnpm build
 
 If the command is not available, ask the user how they want to expose the local CLI before continuing.
 
+For deeper domain-specific review, consult the top-level `skills/<name>/SKILL.md` drafts such as `skills/xss-review/SKILL.md` or `skills/token-auth-review/SKILL.md`. These drafts are guidance only and are not wired to a `--skill` CLI option.
+
 ## Command Order
 
 Run from the target project root:
@@ -62,3 +64,5 @@ Use cautious language:
 Red mode does not perform real attacks, exploitation, bypassing, or penetration testing.
 
 After generating a report, tell the user that they must review the findings directly.
+
+Do not create or assume an MCP server for boan-sensei.

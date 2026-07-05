@@ -258,4 +258,4 @@ scripts            adapter installer scripts
 
 ## License
 
-This project is intended to be released as free open-source software. Add the repository license file before publishing a stable release.
+This project is released under the MIT License. See `LICENSE`.

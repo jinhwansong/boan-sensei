@@ -11,6 +11,8 @@ It is intentionally skill-only for now:
 
 The skill tells Codex when and how to run the local boan-sensei CLI workflow.
 
+For deeper domain-specific review, consult the shared top-level drafts such as `skills/xss-review/SKILL.md`, `skills/token-auth-review/SKILL.md`, and `skills/dependency-review/SKILL.md`. These are not automatically wired to a `--skill` CLI option.
+
 Cursor and Claude Code equivalents live next to this bundle:
 
 ```text
@@ -37,6 +39,8 @@ pnpm build
 
 Then install or load this plugin scaffold according to your Codex plugin development workflow.
 
+Before distribution, verify the Codex plugin installation location and manifest shape against the latest official Codex plugin documentation.
+
 The target project still needs a usable `boan-sensei` CLI command or an agreed local execution path.
 
 You can copy the bundle with:
@@ -53,4 +57,8 @@ Windows PowerShell:
 
 ## Safety
 
-This plugin scaffold helps collect review candidates and generate Markdown reports. It does not replace penetration testing, security certification, or professional security assessment.
+This plugin scaffold helps collect review candidates and generate Markdown reports. Use cautious language such as "Review candidate", "Needs review", "Recommended check", and "Code signal detected". Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. After generating reports, tell the user that they must review the findings directly. Do not create or assume an MCP server for boan-sensei. It does not replace penetration testing, security certification, or professional security assessment.
+
+## Metadata
+
+`.codex-plugin/plugin.json` currently points `homepage`, `repository`, and `websiteURL` to `https://github.com/jinhwansong/boan-sensei`, which matches this repository's `origin` remote.
