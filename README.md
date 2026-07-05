@@ -4,18 +4,19 @@
 
 ## Short Description
 
-`boan-sensei` is a free, open-source Node.js CLI for frontend projects. It collects security review candidates from local source code and generates Markdown reports for developers and internal sharing.
+`boan-sensei` is an adapter-first frontend security review workflow pack for AI coding tools such as Codex, Cursor, and Claude Code.
 
-It is designed to be cautious by default: CLI output stays short, detailed context goes into generated files, and results are described as review candidates that need human confirmation.
+The CLI in `apps/cli` is the local execution engine that adapters call. The main goal is not “install a global CLI from npm first,” but “drop the right adapter into your AI coding tool and let it run a cautious local review workflow.”
 
 ## What boan-sensei Does
 
+- Gives AI coding tools a repeatable frontend security review workflow.
 - Scans frontend files under `src`.
 - Collects keyword-based code signals such as browser storage, public environment variables, iframe usage, cross-window messaging, and debug output.
 - Writes structured findings to `.boan-sensei/findings.json`.
 - Generates Markdown reports for different review modes.
 - Generates a developer TODO checklist.
-- Prints a short “boan-sensei note” after scan completion.
+- Keeps CLI output short so AI tool context does not get flooded.
 
 ## What boan-sensei Does Not Do
 
@@ -28,44 +29,49 @@ It is designed to be cautious by default: CLI output stays short, detailed conte
 
 Use the output as a review aid, not as a final security decision.
 
-## Installation
+## Adapter-First Setup
 
-After package publication, run it with `npx`:
+Use the adapter that matches your AI coding tool:
 
-```bash
-npx boan-sensei scan
-```
+- Claude Code: `adapters/claude/boan-sensei/SKILL.md`
+- Cursor: `adapters/cursor/.cursor/rules/boan-sensei.mdc`
+- Codex: `adapters/codex/AGENTS.md`
 
-For local development in this repository:
+Copy or link the adapter file into the location your tool expects. The adapter tells the AI tool when to run `boan-sensei`, which mode to use, and how to describe results cautiously.
+
+The local CLI engine still needs to be available in the repository or workspace where the adapter runs. During development, build it from this repository:
 
 ```bash
 pnpm install
 pnpm build
-pnpm --filter boan-sensei exec boan-sensei scan
 ```
 
-## Usage
+Then the adapter can call the local CLI command in the project workflow.
 
-Basic flow:
+## CLI Usage
+
+These are the commands the adapters are designed to run:
 
 ```bash
-npx boan-sensei scan
-npx boan-sensei report
-npx boan-sensei todo
+boan-sensei scan
+boan-sensei report
+boan-sensei todo
 ```
 
 Mode-specific reports:
 
 ```bash
-npx boan-sensei scan --mode blue
-npx boan-sensei report --mode blue
+boan-sensei scan --mode blue
+boan-sensei report --mode blue
 
-npx boan-sensei scan --mode red
-npx boan-sensei report --mode red
+boan-sensei scan --mode red
+boan-sensei report --mode red
 
-npx boan-sensei scan --mode purple
-npx boan-sensei report --mode purple
+boan-sensei scan --mode purple
+boan-sensei report --mode purple
 ```
+
+Future package distribution may also support `npx boan-sensei ...`, but npm publishing is not the primary plugin strategy for this project.
 
 ## Commands
 
@@ -131,13 +137,21 @@ Recommended wording:
 
 ## AI Coding Tool Adapters
 
-Draft adapter guidance is included for AI coding tools:
+The adapters are the primary integration surface:
 
 - `adapters/claude/boan-sensei/SKILL.md`
 - `adapters/cursor/.cursor/rules/boan-sensei.mdc`
 - `adapters/codex/AGENTS.md`
 
-These files explain when to run `boan-sensei`, how to use modes, and how to keep wording cautious. MCP servers, automatic fixes, and full plugin integrations are outside the current scope.
+They explain:
+
+- when to use `boan-sensei`
+- how to run `scan`, `report`, and `todo`
+- which mode to choose
+- how to avoid overstating results
+- why report output still needs human review
+
+MCP servers, automatic fixes, and full marketplace-style plugin packaging are outside the current scope.
 
 ## Development
 
@@ -152,7 +166,7 @@ Project layout:
 
 ```text
 packages/core      scanning, report generation, mode templates
-apps/cli           Node.js CLI entrypoint
+apps/cli           Node.js CLI execution engine
 adapters           AI coding tool guidance
 templates          future template examples
 docs               project notes and design docs
