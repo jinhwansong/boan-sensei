@@ -175,8 +175,8 @@ export const SCAN_RULES: ScanRule[] = [
   {
     pattern: /\b(?:skipAuth|bypassAuth|TEST_MODE|DEBUG_MODE)\b/,
     category: "debug-dev-leftover",
-    risk: "low",
+    risk: "medium",
     title: "인증 우회/디버그 플래그 후보 확인 필요",
-    message: "개발 또는 테스트용 플래그 후보가 발견되었습니다. 운영 반영 전 의도와 적용 범위 확인을 권장합니다."
+    message: "개발 또는 테스트용 플래그 후보가 발견되었습니다. 인증 우회 흐름이 실제 운영 코드에 남아있는지 우선 확인이 필요합니다."
   }
 ];
