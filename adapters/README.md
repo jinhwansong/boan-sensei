@@ -12,6 +12,14 @@ Start here:
 adapters/INSTALL.md
 ```
 
+Installer scripts are available:
+
+```bash
+scripts/install-adapter.sh codex /path/to/project
+scripts/install-adapter.sh cursor /path/to/project
+scripts/install-adapter.sh claude /path/to/skills-root
+```
+
 For a copy-oriented example, see:
 
 ```text
@@ -59,3 +67,13 @@ cd examples/frontend-sample
 node ../../apps/cli/dist/index.js scan --mode basic
 node ../../apps/cli/dist/index.js report --mode basic
 ```
+
+## Codex Plugin Scaffold
+
+For Codex plugin development, see:
+
+```text
+plugins/codex-boan-sensei
+```
+
+The plugin scaffold is skill-only and separate from the simple `AGENTS.md` adapter.

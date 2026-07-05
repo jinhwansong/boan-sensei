@@ -41,6 +41,22 @@ Detailed copy/install instructions are in `adapters/INSTALL.md`.
 
 Copy or link the adapter file into the location your tool expects. The adapter tells the AI tool when to run `boan-sensei`, which mode to use, and how to describe results cautiously.
 
+You can also use the installer scripts:
+
+```bash
+scripts/install-adapter.sh codex /path/to/project
+scripts/install-adapter.sh cursor /path/to/project
+scripts/install-adapter.sh claude /path/to/skills-root
+```
+
+On Windows:
+
+```powershell
+.\scripts\install-adapter.ps1 codex C:\path\to\project
+.\scripts\install-adapter.ps1 cursor C:\path\to\project
+.\scripts\install-adapter.ps1 claude C:\path\to\skills-root
+```
+
 The local CLI engine still needs to be available in the repository or workspace where the adapter runs. During development, build it from this repository:
 
 ```bash
@@ -145,6 +161,7 @@ The adapters are the primary integration surface:
 - `adapters/claude/boan-sensei/SKILL.md`
 - `adapters/cursor/.cursor/rules/boan-sensei.mdc`
 - `adapters/codex/AGENTS.md`
+- `plugins/codex-boan-sensei`
 
 They explain:
 
@@ -155,6 +172,8 @@ They explain:
 - why report output still needs human review
 
 MCP servers, automatic fixes, and full marketplace-style plugin packaging are outside the current scope.
+
+`plugins/codex-boan-sensei` is a skill-only Codex plugin scaffold. It is separate from the simple `AGENTS.md` adapter and does not add an MCP server.
 
 ## Examples
 
@@ -179,6 +198,8 @@ adapters           AI coding tool guidance
 templates          future template examples
 docs               project notes and design docs
 examples           runnable and copyable usage examples
+plugins            Codex plugin scaffold experiments
+scripts            adapter installer scripts
 ```
 
 ## License

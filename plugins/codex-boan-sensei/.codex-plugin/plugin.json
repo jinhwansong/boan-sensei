@@ -1,0 +1,29 @@
+{
+  "name": "codex-boan-sensei",
+  "version": "0.1.0",
+  "description": "Codex skill plugin for running boan-sensei frontend security review candidate workflows.",
+  "author": {
+    "name": "jinhwansong",
+    "url": "https://github.com/jinhwansong"
+  },
+  "homepage": "https://github.com/jinhwansong/boan-sensei",
+  "repository": "https://github.com/jinhwansong/boan-sensei",
+  "license": "MIT",
+  "keywords": ["codex", "frontend", "security-review", "adapter", "boan-sensei"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "boan-sensei",
+    "shortDescription": "Run cautious frontend security review candidate workflows.",
+    "longDescription": "boan-sensei helps Codex run local scan, report, and todo workflows for frontend security review candidates. It does not perform penetration testing or confirm security impact.",
+    "developerName": "jinhwansong",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/jinhwansong/boan-sensei",
+    "defaultPrompt": [
+      "Run boan-sensei basic review.",
+      "Create a blue mode report.",
+      "Summarize red mode review questions."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

@@ -2,6 +2,22 @@
 
 This example shows where to copy boan-sensei adapter files in a target project.
 
+You can copy manually, or use the installer scripts:
+
+```bash
+scripts/install-adapter.sh codex /path/to/project
+scripts/install-adapter.sh cursor /path/to/project
+scripts/install-adapter.sh claude /path/to/skills-root
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\install-adapter.ps1 codex C:\path\to\project
+.\scripts\install-adapter.ps1 cursor C:\path\to\project
+.\scripts\install-adapter.ps1 claude C:\path\to\skills-root
+```
+
 ## Claude Code
 
 Copy:

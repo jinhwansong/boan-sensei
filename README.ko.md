@@ -41,6 +41,22 @@
 
 각 도구가 요구하는 위치에 adapter 파일을 복사하거나 연결합니다. adapter는 언제 `boan-sensei`를 실행할지, 어떤 mode를 사용할지, 결과를 어떤 표현으로 조심스럽게 안내할지 정의합니다.
 
+설치 스크립트도 사용할 수 있습니다.
+
+```bash
+scripts/install-adapter.sh codex /path/to/project
+scripts/install-adapter.sh cursor /path/to/project
+scripts/install-adapter.sh claude /path/to/skills-root
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\install-adapter.ps1 codex C:\path\to\project
+.\scripts\install-adapter.ps1 cursor C:\path\to\project
+.\scripts\install-adapter.ps1 claude C:\path\to\skills-root
+```
+
 adapter가 실행할 로컬 CLI 엔진은 대상 저장소나 작업 공간에서 사용할 수 있어야 합니다. 개발 중에는 이 저장소에서 먼저 빌드합니다.
 
 ```bash
@@ -145,6 +161,7 @@ adapter는 이 프로젝트의 핵심 통합 지점입니다.
 - `adapters/claude/boan-sensei/SKILL.md`
 - `adapters/cursor/.cursor/rules/boan-sensei.mdc`
 - `adapters/codex/AGENTS.md`
+- `plugins/codex-boan-sensei`
 
 adapter는 다음 내용을 안내합니다.
 
@@ -155,6 +172,8 @@ adapter는 다음 내용을 안내합니다.
 - 보고서 생성 후 사용자가 직접 확인해야 하는 이유
 
 MCP 서버, 자동 수정, 마켓플레이스형 플러그인 패키징은 현재 범위에 포함하지 않습니다.
+
+`plugins/codex-boan-sensei`는 skill-only Codex 플러그인 스캐폴드입니다. 단순 `AGENTS.md` adapter와 분리되어 있으며 MCP 서버를 추가하지 않습니다.
 
 ## 예시
 
@@ -179,6 +198,8 @@ adapters           AI 코딩툴 사용 안내
 templates          향후 템플릿 예시
 docs               프로젝트 메모와 설계 문서
 examples           실행 및 복사 가능한 사용 예시
+plugins            Codex 플러그인 스캐폴드 실험
+scripts            adapter 설치 스크립트
 ```
 
 ## 라이선스

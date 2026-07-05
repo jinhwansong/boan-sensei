@@ -15,6 +15,26 @@ The adapter expects a `boan-sensei` command to be available in the target workfl
 
 If the command is missing, the adapter should stop and ask the user how to expose the local CLI engine. It should not assume npm publishing is required.
 
+## Installer Scripts
+
+You can copy adapter files with the installer scripts:
+
+```bash
+scripts/install-adapter.sh codex /path/to/project
+scripts/install-adapter.sh cursor /path/to/project
+scripts/install-adapter.sh claude /path/to/skills-root
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\install-adapter.ps1 codex C:\path\to\project
+.\scripts\install-adapter.ps1 cursor C:\path\to\project
+.\scripts\install-adapter.ps1 claude C:\path\to\skills-root
+```
+
+The scripts do not silently overwrite existing adapter files. If a target file already exists, they copy a merge candidate into `.boan-sensei-adapter/` and ask you to review it.
+
 ## Claude
 
 Copy the Claude skill folder:
@@ -77,3 +97,13 @@ Do not treat boan-sensei output as a final security decision.
 
 - `examples/frontend-sample`: a tiny project for checking `scan`, `report`, and `todo`.
 - `examples/adapter-install`: a copy guide for installing adapter files into another project.
+
+## Codex Plugin Scaffold
+
+The repo also includes a skill-only Codex plugin scaffold:
+
+```text
+plugins/codex-boan-sensei/
+```
+
+This scaffold is separate from `adapters/codex/AGENTS.md`. It does not add an MCP server and does not assume npm publishing.
