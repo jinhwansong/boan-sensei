@@ -7,7 +7,7 @@ description: Use boan-sensei to collect frontend security review candidates and 
 
 Use this skill when working in a frontend project and the user wants help collecting security review candidates, preparing an internal security review report, or turning review candidates into developer TODO items.
 
-boan-sensei does not confirm vulnerabilities and does not perform penetration testing. Treat every result as a review candidate that needs human confirmation.
+boan-sensei does not confirm security impact and does not perform penetration testing. Treat every result as a review candidate that needs human confirmation.
 
 ## When To Use
 
@@ -16,39 +16,37 @@ boan-sensei does not confirm vulnerabilities and does not perform penetration te
 - The user wants a developer checklist for follow-up review work.
 - The project is a JavaScript, TypeScript, React, Vue, Next.js, Vite, or similar frontend codebase.
 
-Do not use boan-sensei as proof that a project is secure or insecure.
-
 ## Workflow
 
 Run the commands from the project root:
 
 ```bash
-npx boan-sensei scan
-npx boan-sensei report
+npx boan-sensei scan --mode basic
+npx boan-sensei report --mode basic
 npx boan-sensei todo
 ```
 
-Expected outputs:
+Supported modes:
 
-- `.boan-sensei/findings.json`
-- `SECURITY_REPORT.md`
-- `SECURITY_TODO.md`
+- `basic`: default review candidate report
+- `blue`: defensive review and operational checks
+- `red`: simulation questions from an attacker-minded review perspective
+- `purple`: paired Red questions and Blue actions
 
 ## Language Rules
 
-Never describe a result as a confirmed vulnerability unless the user has provided separate verified evidence.
+Never describe a result as confirmed security impact unless the user has provided separate verified evidence.
 
 Use cautious language such as:
 
 - 점검 후보
 - 확인 필요
 - 검토 권장
+- 사용 위치 발견
+- 운영 반영 전 확인 필요
+- 공격자 관점 검토 질문
 
-Avoid definitive language such as:
-
-- 취약점 발견
-- 보안 취약점 확정
-- 침투 테스트 결과
+Avoid definitive or promotional security claims.
 
 ## User Confirmation
 

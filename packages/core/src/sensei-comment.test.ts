@@ -23,7 +23,7 @@ describe("getSenseiComment", () => {
     const comment = getSenseiComment([finding({ category: "browser-storage" })]);
 
     expect(comment).toBe("localStorage 냄새가 납니다. 토큰 저장 여부만 확인해봅시다.");
-    expect(comment).not.toContain("취약점 발견");
+    expect(comment).toContain("확인");
   });
 
   test("prefers high-signal HTML injection candidates", () => {

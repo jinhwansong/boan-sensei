@@ -1,7 +1,11 @@
 node_modules/
 dist/
+work/
 .boan-sensei/
 SECURITY_REPORT.md
 SECURITY_TODO.md
+SECURITY_BLUE_TEAM.md
+SECURITY_RED_TEAM_SIMULATION.md
+SECURITY_PURPLE_TEAM.md
 *.tsbuildinfo
 .DS_Store

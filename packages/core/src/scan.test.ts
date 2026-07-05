@@ -83,16 +83,17 @@ describe("scanProject", () => {
       "cross-window-messaging"
     ]);
     expect(findings.every((finding) => finding.status === "needs_review")).toBe(true);
-    expect(findings.every((finding) => !finding.message.includes("취약점 발견"))).toBe(true);
+    expect(findings.every((finding) => finding.message.includes("검토") || finding.message.includes("확인"))).toBe(true);
   });
 
-  test("writes findings to .boan-sensei/findings.json when requested", async () => {
+  test("writes findings and basic mode to .boan-sensei/findings.json by default", async () => {
     const root = await makeProject();
     await writeProjectFile(root, "src/env.ts", "const api = import.meta.env.VITE_API_URL;\n");
 
     await scanProject(root, { write: true });
 
     const stored = JSON.parse(await readFile(join(root, ".boan-sensei", "findings.json"), "utf8"));
+    expect(stored.mode).toBe("basic");
     expect(stored.findings).toHaveLength(1);
     expect(stored.findings[0].title).toBe("VITE_ 공개 환경 변수 확인 필요");
   });

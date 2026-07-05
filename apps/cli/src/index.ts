@@ -2,20 +2,33 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { generateReport, generateTodo, getSenseiComment, scanProject, type FindingsFile } from "@boan-sensei/core";
+import {
+  generateReport,
+  generateTodo,
+  getSenseiComment,
+  REPORT_FILE_BY_MODE,
+  resolveMode,
+  scanProject,
+  type FindingsFile
+} from "@boan-sensei/core";
 
 const command = process.argv[2];
 
 try {
+  const mode = resolveMode(getOptionValue("--mode"));
+
   if (command === "scan") {
-    const findings = await scanProject(process.cwd(), { write: true });
-    console.log(`boan-sensei: 점검 후보 ${findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`);
+    const findings = await scanProject(process.cwd(), { write: true, mode });
+    console.log(
+      `boan-sensei: ${mode} mode로 점검 후보 ${findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`
+    );
     console.log(`보안선생 한마디: ${getSenseiComment(findings)}`);
   } else if (command === "report") {
     const findingsFile = await readFindingsFile();
-    const markdown = generateReport(findingsFile.findings, { projectRoot: findingsFile.projectRoot });
-    await writeFile(resolve(process.cwd(), "SECURITY_REPORT.md"), markdown, "utf8");
-    console.log("boan-sensei: SECURITY_REPORT.md를 생성했습니다.");
+    const markdown = generateReport(findingsFile.findings, { projectRoot: findingsFile.projectRoot, mode });
+    const reportFile = REPORT_FILE_BY_MODE[mode];
+    await writeFile(resolve(process.cwd(), reportFile), markdown, "utf8");
+    console.log(`boan-sensei: ${reportFile}를 생성했습니다.`);
   } else if (command === "todo") {
     const findingsFile = await readFindingsFile();
     const markdown = generateTodo(findingsFile.findings);
@@ -43,11 +56,19 @@ async function readFindingsFile(): Promise<FindingsFile> {
   }
 }
 
+function getOptionValue(name: string): string | undefined {
+  const index = process.argv.indexOf(name);
+  if (index === -1) {
+    return undefined;
+  }
+  return process.argv[index + 1];
+}
+
 function printHelp() {
   console.log(`boan-sensei v0.1
 
 Usage:
-  boan-sensei scan
-  boan-sensei report
+  boan-sensei scan [--mode basic|blue|red|purple]
+  boan-sensei report [--mode basic|blue|red|purple]
   boan-sensei todo`);
 }

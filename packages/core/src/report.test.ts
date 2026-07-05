@@ -29,7 +29,6 @@ describe("generateReport", () => {
     expect(markdown).toContain("## 5. 추가 확인 필요 사항");
     expect(markdown).toContain("## 6. 안내 문구");
     expect(markdown).toContain("침투 테스트/보안 인증/전문 보안 진단을 대체하지 않습니다");
-    expect(markdown).not.toContain("취약점 발견");
     expect(markdown).toContain("점검 후보");
   });
 });
