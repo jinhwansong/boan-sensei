@@ -37,6 +37,8 @@ Use the adapter that matches your AI coding tool:
 - Cursor: `adapters/cursor/.cursor/rules/boan-sensei.mdc`
 - Codex: `adapters/codex/AGENTS.md`
 
+Detailed copy/install instructions are in `adapters/INSTALL.md`.
+
 Copy or link the adapter file into the location your tool expects. The adapter tells the AI tool when to run `boan-sensei`, which mode to use, and how to describe results cautiously.
 
 The local CLI engine still needs to be available in the repository or workspace where the adapter runs. During development, build it from this repository:
@@ -139,6 +141,7 @@ Recommended wording:
 
 The adapters are the primary integration surface:
 
+- `adapters/INSTALL.md`
 - `adapters/claude/boan-sensei/SKILL.md`
 - `adapters/cursor/.cursor/rules/boan-sensei.mdc`
 - `adapters/codex/AGENTS.md`

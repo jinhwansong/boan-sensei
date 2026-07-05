@@ -1,17 +1,28 @@
 # boan-sensei Adapter Guidance
 
-Use boan-sensei when the user asks for frontend security review support, a Markdown report for internal sharing, or a developer TODO checklist for follow-up review.
+Use boan-sensei when the user asks for frontend security review support, an internal Markdown report, or developer TODO items.
 
-boan-sensei is a local CLI helper. It collects frontend security review candidates only. It does not confirm security impact, perform penetration testing, provide security certification, or replace professional security assessment.
+boan-sensei is an adapter-first workflow. The CLI is a local execution engine. Do not assume npm publishing is required.
+
+## Before Running
+
+Confirm that the `boan-sensei` command is available in the target project workflow. During local development, build the repository first:
+
+```bash
+pnpm install
+pnpm build
+```
+
+If the command is not available, ask the user how they want to expose the local CLI before continuing.
 
 ## Command Order
 
-Run these commands from the target project root:
+Run from the target project root:
 
 ```bash
-npx boan-sensei scan --mode basic
-npx boan-sensei report --mode basic
-npx boan-sensei todo
+boan-sensei scan --mode basic
+boan-sensei report --mode basic
+boan-sensei todo
 ```
 
 For specialized reports, use `--mode blue`, `--mode red`, or `--mode purple`.
@@ -19,10 +30,10 @@ For specialized reports, use `--mode blue`, `--mode red`, or `--mode purple`.
 Mode examples:
 
 ```bash
-npx boan-sensei scan --mode basic
-npx boan-sensei scan --mode blue
-npx boan-sensei scan --mode red
-npx boan-sensei scan --mode purple
+boan-sensei scan --mode basic
+boan-sensei scan --mode blue
+boan-sensei scan --mode red
+boan-sensei scan --mode purple
 ```
 
 Generated files:
@@ -40,17 +51,17 @@ Do not describe boan-sensei output as confirmed security impact.
 
 Use cautious language:
 
+- Review candidate
+- Needs review
+- Recommended check
+- Code signal detected
 - 점검 후보
 - 확인 필요
 - 검토 권장
-- 사용 위치 발견
-- 운영 반영 전 확인 필요
-- 공격자 관점 검토 질문
+- 코드 신호 발견
 
 ## User Confirmation
 
-After generating the report, tell the user that they must review the findings directly. The generated report is an auxiliary document for frontend security review and needs human confirmation.
-
-보고서 생성 후에는 사용자가 직접 확인해야 한다고 안내한다.
+After generating the report, tell the user that they must review the findings directly. The generated report is auxiliary material for frontend security review and needs human confirmation.
 
 Do not build or assume an MCP server for boan-sensei in this adapter.

@@ -1,25 +1,43 @@
 # Claude Adapter
 
-Claude Code에서 `boan-sensei`를 사용할 때 참고할 Skill 초안을 담는 폴더입니다.
+This folder contains the Claude-compatible boan-sensei skill draft.
 
-> English: This directory contains a draft Claude Code Skill for guiding safe `boan-sensei` CLI usage.
+## Files
 
-## 포함된 파일
-
-- `boan-sensei/SKILL.md`
-
-## 사용 의도
-
-Claude Code가 프론트엔드 프로젝트에서 보안 점검 후보를 수집해야 할 때 다음 흐름을 안내합니다.
-
-```bash
-npx boan-sensei scan
-npx boan-sensei report
-npx boan-sensei todo
+```text
+boan-sensei/
+  SKILL.md
 ```
 
-## 주의
+## Install
 
-이 adapter는 실제 취약점 판정 도구가 아닙니다. 결과는 “점검 후보”, “확인 필요”, “검토 권장”으로 표현해야 합니다.
+Copy the whole `boan-sensei` folder into the skill location supported by your Claude setup.
 
-v0.1에서는 Claude Skill 배포 자동화나 MCP 서버를 구현하지 않습니다.
+For Claude Code-style skill environments, keep the folder name and `SKILL.md` file together:
+
+```text
+<claude-skills-location>/boan-sensei/SKILL.md
+```
+
+For plain Claude web/app usage, upload or paste `boan-sensei/SKILL.md`. A regular Claude chat may not automatically read an entire GitHub repository from a URL.
+
+## Local CLI Requirement
+
+The adapter expects the local command to be available:
+
+```bash
+boan-sensei scan --mode basic
+boan-sensei report --mode basic
+boan-sensei todo
+```
+
+During development, build the CLI from this repository first:
+
+```bash
+pnpm install
+pnpm build
+```
+
+## Safety
+
+The adapter must describe results as review candidates that need human confirmation. It must not present the report as a final security decision.

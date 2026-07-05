@@ -5,62 +5,66 @@ description: Use boan-sensei to collect frontend security review candidates and 
 
 # boan-sensei
 
-Use this skill when working in a frontend project and the user wants help collecting security review candidates, preparing an internal security review report, or turning review candidates into developer TODO items.
+Use this skill when working in a frontend project and the user wants security review support, an internal Markdown report, or developer TODO items.
 
-boan-sensei does not confirm security impact and does not perform penetration testing. Treat every result as a review candidate that needs human confirmation.
+boan-sensei is an adapter-first workflow. The CLI is a local execution engine. Do not assume npm publishing is required.
 
-## When To Use
+## Before Running
 
-- The user asks for a frontend security review pass.
-- The user wants a Markdown security report for internal sharing.
-- The user wants a developer checklist for follow-up review work.
-- The project is a JavaScript, TypeScript, React, Vue, Next.js, Vite, or similar frontend codebase.
-
-## Workflow
-
-Run the commands from the project root:
+Confirm that the `boan-sensei` command is available in the target project workflow. During local development, the repository should be built first:
 
 ```bash
-npx boan-sensei scan --mode basic
-npx boan-sensei report --mode basic
-npx boan-sensei todo
+pnpm install
+pnpm build
 ```
 
-Supported modes:
+If the command is not available, ask the user how they want to expose the local CLI before continuing.
 
-- `basic`: default review candidate report
-- `blue`: defensive review and operational checks
-- `red`: simulation questions from an attacker-minded review perspective
-- `purple`: paired Red questions and Blue actions
+## Command Order
+
+Run from the target project root:
+
+```bash
+boan-sensei scan --mode basic
+boan-sensei report --mode basic
+boan-sensei todo
+```
 
 Mode examples:
 
 ```bash
-npx boan-sensei scan --mode basic
-npx boan-sensei scan --mode blue
-npx boan-sensei scan --mode red
-npx boan-sensei scan --mode purple
+boan-sensei scan --mode basic
+boan-sensei scan --mode blue
+boan-sensei scan --mode red
+boan-sensei scan --mode purple
 ```
+
+## Modes
+
+- `basic`: default review candidate report
+- `blue`: defensive review and operational checks
+- `red`: Red Team Simulation questions from an attacker-minded review perspective
+- `purple`: paired Red questions and Blue actions
+
+Red mode does not perform real attacks, exploitation, bypassing, or penetration testing.
 
 ## Language Rules
 
-Never describe a result as confirmed security impact unless the user has provided separate verified evidence.
+Use cautious language:
 
-Use cautious language such as:
-
+- Review candidate
+- Needs review
+- Recommended check
+- Code signal detected
 - 점검 후보
 - 확인 필요
 - 검토 권장
-- 사용 위치 발견
-- 운영 반영 전 확인 필요
-- 공격자 관점 검토 질문
+- 코드 신호 발견
 
 Avoid definitive or promotional security claims.
 
 ## User Confirmation
 
-After generating the report, tell the user that they must review the findings directly. The generated Markdown is an auxiliary review document and does not replace penetration testing, security certification, or professional security assessment.
-
-보고서 생성 후에는 사용자가 직접 확인해야 한다고 안내한다.
+After generating a report, tell the user that they must review the findings directly. The generated Markdown is an auxiliary review document and does not replace professional security assessment.
 
 Do not create or assume an MCP server for boan-sensei.
