@@ -1,0 +1,17 @@
+{
+  "name": "boan-sensei",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "boan-sensei": "./dist/index.js"
+  },
+  "dependencies": {
+    "@boan-sensei/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.boan-sensei/
+SECURITY_REPORT.md
+SECURITY_TODO.md
+*.tsbuildinfo
+.DS_Store
