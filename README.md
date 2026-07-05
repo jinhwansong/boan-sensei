@@ -65,6 +65,22 @@ scripts/install-plugin.sh cursor /path/to/project
 scripts/install-plugin.sh claude /path/to/skills-root
 ```
 
+Windows PowerShell:
+
+```powershell
+.\scripts\install-plugin.ps1 codex C:\path\to\codex-plugins
+.\scripts\install-plugin.ps1 cursor C:\path\to\project
+.\scripts\install-plugin.ps1 claude C:\path\to\skills-root
+```
+
+Adapter files, shared skill drafts, and plugin bundles have different jobs:
+
+- `adapters/`: lower-level single instruction files you copy or merge into a target project or tool configuration.
+- `skills/`: shared boan-sensei security analysis skill drafts.
+- `plugins/`: tool-specific bundles that package the same workflow in the shape Codex, Cursor, or Claude Code expects.
+
+See `plugins/README.md` for the exact target layout and per-tool differences.
+
 The local CLI engine still needs to be available in the repository or workspace where the adapter runs. During development, build it from this repository:
 
 ```bash
@@ -141,6 +157,33 @@ Reads `.boan-sensei/findings.json` and writes `SECURITY_TODO.md`.
 
 Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. It only summarizes review questions from an attacker's perspective based on local code signals.
 
+## Skills
+
+boan-sensei is a CLI-based review tool, and it also includes shared security analysis skill drafts for future reuse by AI coding agents such as Claude Code, Cursor, and Codex.
+
+The tool-specific plugin bundles under `plugins/` can package or reference these drafts for Codex, Cursor, and Claude Code. These files are not new CLI behavior, and the CLI does not implement a `--skill` option yet.
+
+```text
+skills/
+  frontend-security-review/SKILL.md
+  token-auth-review/SKILL.md
+  xss-review/SKILL.md
+  external-content-review/SKILL.md
+  dependency-review/SKILL.md
+  report-writer/SKILL.md
+```
+
+The skill drafts cover:
+
+- broad frontend security review candidates
+- authentication and token flow review candidates
+- XSS and HTML rendering review candidates
+- iframe, embed, external link, `window.open`, `postMessage`, and CSP review candidates
+- frontend dependency review candidates
+- cautious Markdown report writing from collected findings
+
+All skills follow the same safety principles: do not confirm vulnerabilities, do not perform real attacks, do not automate exploit or bypass steps, and assume the user owns or has permission to review the project.
+
 ## Generated Files
 
 - `.boan-sensei/findings.json`
@@ -183,7 +226,7 @@ They explain:
 
 MCP servers, automatic fixes, and full marketplace-style plugin packaging are outside the current scope.
 
-`plugins/codex-boan-sensei` is a skill-only Codex plugin scaffold. `plugins/cursor-boan-sensei` and `plugins/claude-code-boan-sensei` provide equivalent plugin-style bundles for Cursor and Claude Code. They do not add MCP servers.
+`plugins/codex-boan-sensei` is a skill-only Codex plugin scaffold. `plugins/cursor-boan-sensei` packages the Cursor rule into a project-level `.cursor/rules/` layout. `plugins/claude-code-boan-sensei` packages a Claude Code skill folder. They do not add MCP servers.
 
 ## Examples
 
@@ -208,7 +251,8 @@ adapters           AI coding tool guidance
 templates          future template examples
 docs               project notes and design docs
 examples           runnable and copyable usage examples
-plugins            Codex plugin scaffold experiments
+plugins            tool-specific Codex, Cursor, and Claude Code plugin bundles
+skills             shared security analysis skill drafts for plugin bundles
 scripts            adapter installer scripts
 ```
 
