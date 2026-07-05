@@ -70,10 +70,12 @@ node ../../apps/cli/dist/index.js report --mode basic
 
 ## Codex Plugin Scaffold
 
-For Codex plugin development, see:
+For tool-specific plugin bundles, see:
 
 ```text
 plugins/codex-boan-sensei
+plugins/cursor-boan-sensei
+plugins/claude-code-boan-sensei
 ```
 
-The plugin scaffold is skill-only and separate from the simple `AGENTS.md` adapter.
+These plugin bundles are separate from the lower-level adapter files and do not add MCP servers.

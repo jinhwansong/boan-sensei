@@ -57,6 +57,14 @@ On Windows:
 .\scripts\install-adapter.ps1 claude C:\path\to\skills-root
 ```
 
+For tool-specific plugin bundles:
+
+```bash
+scripts/install-plugin.sh codex /path/to/codex-plugins
+scripts/install-plugin.sh cursor /path/to/project
+scripts/install-plugin.sh claude /path/to/skills-root
+```
+
 The local CLI engine still needs to be available in the repository or workspace where the adapter runs. During development, build it from this repository:
 
 ```bash
@@ -162,6 +170,8 @@ The adapters are the primary integration surface:
 - `adapters/cursor/.cursor/rules/boan-sensei.mdc`
 - `adapters/codex/AGENTS.md`
 - `plugins/codex-boan-sensei`
+- `plugins/cursor-boan-sensei`
+- `plugins/claude-code-boan-sensei`
 
 They explain:
 
@@ -173,7 +183,7 @@ They explain:
 
 MCP servers, automatic fixes, and full marketplace-style plugin packaging are outside the current scope.
 
-`plugins/codex-boan-sensei` is a skill-only Codex plugin scaffold. It is separate from the simple `AGENTS.md` adapter and does not add an MCP server.
+`plugins/codex-boan-sensei` is a skill-only Codex plugin scaffold. `plugins/cursor-boan-sensei` and `plugins/claude-code-boan-sensei` provide equivalent plugin-style bundles for Cursor and Claude Code. They do not add MCP servers.
 
 ## Examples
 

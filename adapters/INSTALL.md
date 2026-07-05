@@ -100,10 +100,12 @@ Do not treat boan-sensei output as a final security decision.
 
 ## Codex Plugin Scaffold
 
-The repo also includes a skill-only Codex plugin scaffold:
+The repo also includes tool-specific plugin bundles:
 
 ```text
 plugins/codex-boan-sensei/
+plugins/cursor-boan-sensei/
+plugins/claude-code-boan-sensei/
 ```
 
-This scaffold is separate from `adapters/codex/AGENTS.md`. It does not add an MCP server and does not assume npm publishing.
+These bundles are separate from the lower-level `adapters/` files. They do not add MCP servers and do not assume npm publishing.

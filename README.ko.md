@@ -57,6 +57,14 @@ Windows PowerShell:
 .\scripts\install-adapter.ps1 claude C:\path\to\skills-root
 ```
 
+도구별 plugin bundle을 설치하려면 다음 스크립트를 사용할 수 있습니다.
+
+```bash
+scripts/install-plugin.sh codex /path/to/codex-plugins
+scripts/install-plugin.sh cursor /path/to/project
+scripts/install-plugin.sh claude /path/to/skills-root
+```
+
 adapter가 실행할 로컬 CLI 엔진은 대상 저장소나 작업 공간에서 사용할 수 있어야 합니다. 개발 중에는 이 저장소에서 먼저 빌드합니다.
 
 ```bash
@@ -162,6 +170,8 @@ adapter는 이 프로젝트의 핵심 통합 지점입니다.
 - `adapters/cursor/.cursor/rules/boan-sensei.mdc`
 - `adapters/codex/AGENTS.md`
 - `plugins/codex-boan-sensei`
+- `plugins/cursor-boan-sensei`
+- `plugins/claude-code-boan-sensei`
 
 adapter는 다음 내용을 안내합니다.
 
@@ -173,7 +183,7 @@ adapter는 다음 내용을 안내합니다.
 
 MCP 서버, 자동 수정, 마켓플레이스형 플러그인 패키징은 현재 범위에 포함하지 않습니다.
 
-`plugins/codex-boan-sensei`는 skill-only Codex 플러그인 스캐폴드입니다. 단순 `AGENTS.md` adapter와 분리되어 있으며 MCP 서버를 추가하지 않습니다.
+`plugins/codex-boan-sensei`는 skill-only Codex 플러그인 스캐폴드입니다. `plugins/cursor-boan-sensei`와 `plugins/claude-code-boan-sensei`는 Cursor와 Claude Code용 plugin-style bundle입니다. 이 번들은 MCP 서버를 추가하지 않습니다.
 
 ## 예시
 
