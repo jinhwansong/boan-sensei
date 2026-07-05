@@ -1,18 +1,52 @@
+[English](./README.md) | [한국어](./README.ko.md)
+
 # boan-sensei
 
-`boan-sensei`는 프론트엔드 프로젝트에서 보안 점검 후보를 수집하고, 개발자용/내부 공유용 Markdown 보고서를 생성하는 무료 오픈소스 CLI 도구입니다.
+## Short Description
 
-이 도구는 실제 취약 여부를 확정하거나 침투 테스트를 수행하지 않습니다. 결과는 항상 **점검 후보**, **확인 필요**, **검토 권장** 수준으로 다루어야 하며, 최종 판단은 개발자와 보안 담당자가 직접 확인해야 합니다.
+`boan-sensei` is a free, open-source Node.js CLI for frontend projects. It collects security review candidates from local source code and generates Markdown reports for developers and internal sharing.
 
-> English: `boan-sensei` is a free open-source CLI that collects frontend security review candidates and generates developer-friendly Markdown reports. It does not confirm vulnerabilities or replace professional security assessment.
+It is designed to be cautious by default: CLI output stays short, detailed context goes into generated files, and results are described as review candidates that need human confirmation.
 
-## 왜 만들었나요
+## What boan-sensei Does
 
-프론트엔드 코드에는 보안 검토가 필요한 흔적이 자주 숨어 있습니다. 브라우저 저장소, 공개 환경 변수, `postMessage`, `iframe`, `dangerouslySetInnerHTML` 같은 코드는 상황에 따라 문제 없을 수도 있고, 추가 확인이 필요한 지점일 수도 있습니다.
+- Scans frontend files under `src`.
+- Collects keyword-based code signals such as browser storage, public environment variables, iframe usage, cross-window messaging, and debug output.
+- Writes structured findings to `.boan-sensei/findings.json`.
+- Generates Markdown reports for different review modes.
+- Generates a developer TODO checklist.
+- Prints a short “boan-sensei note” after scan completion.
 
-`boan-sensei`는 이런 흔적을 단정하지 않고, 사람이 확인하기 좋은 후보 목록으로 정리합니다.
+## What boan-sensei Does Not Do
 
-## 빠른 사용법
+- It does not confirm security impact.
+- It does not perform penetration testing.
+- It does not scan external URLs.
+- It does not connect to a vulnerability database.
+- It does not run `npm audit`.
+- It does not automatically modify source code.
+
+Use the output as a review aid, not as a final security decision.
+
+## Installation
+
+After package publication, run it with `npx`:
+
+```bash
+npx boan-sensei scan
+```
+
+For local development in this repository:
+
+```bash
+pnpm install
+pnpm build
+pnpm --filter boan-sensei exec boan-sensei scan
+```
+
+## Usage
+
+Basic flow:
 
 ```bash
 npx boan-sensei scan
@@ -20,7 +54,7 @@ npx boan-sensei report
 npx boan-sensei todo
 ```
 
-mode를 지정할 수도 있습니다. 기본값은 `basic`입니다.
+Mode-specific reports:
 
 ```bash
 npx boan-sensei scan --mode blue
@@ -33,47 +67,13 @@ npx boan-sensei scan --mode purple
 npx boan-sensei report --mode purple
 ```
 
-현재 레포에서 개발 중인 CLI를 실행하려면:
-
-```bash
-pnpm install
-pnpm build
-pnpm --filter boan-sensei exec boan-sensei scan --mode basic
-```
-
-## Mode
-
-| mode | 보고서 파일 | 목적 |
-| --- | --- | --- |
-| `basic` | `SECURITY_REPORT.md` | 기본 보안 점검 후보 보고서 |
-| `blue` | `SECURITY_BLUE_TEAM.md` | 방어자 관점의 확인 항목, 권장 조치, 운영 반영 전 검토 |
-| `red` | `SECURITY_RED_TEAM_SIMULATION.md` | 공격자 관점 검토 질문 정리. 실제 공격, 침투, 우회 자동화를 수행하지 않음 |
-| `purple` | `SECURITY_PURPLE_TEAM.md` | Red 관점 질문과 Blue 조치를 한 쌍으로 정리 |
-
-red mode는 실제 공격, 침투, 우회, 익스플로잇 자동화를 수행하지 않습니다. 확인된 코드 신호를 바탕으로 공격자 관점에서 검토할 질문을 정리하는 Red Team Simulation 기능입니다.
-
-## CLI 출력 예시
-
-```text
-boan-sensei: basic mode로 점검 후보 1건을 .boan-sensei/findings.json에 저장했습니다.
-보안선생 한마디: localStorage 냄새가 납니다. 토큰 저장 여부만 확인해봅시다.
-```
-
-CLI 출력은 AI 코딩툴 컨텍스트를 과하게 채우지 않도록 짧게 유지합니다. 상세 라인, 파일 경로, 메시지는 `.boan-sensei/findings.json`과 Markdown 보고서에서 확인합니다.
-
-## 명령어
+## Commands
 
 ### `boan-sensei scan [--mode basic|blue|red|purple]`
 
-현재 작업 디렉터리를 기준으로 `src` 하위 파일을 검사하고 다음 파일을 생성합니다.
+Scans the current working directory and writes `.boan-sensei/findings.json`.
 
-```text
-.boan-sensei/findings.json
-```
-
-`findings.json`에는 사용한 mode도 함께 저장됩니다.
-
-검사 대상 확장자:
+The scanner checks `src` files with these extensions:
 
 - `.js`
 - `.jsx`
@@ -81,7 +81,7 @@ CLI 출력은 AI 코딩툴 컨텍스트를 과하게 채우지 않도록 짧게 
 - `.tsx`
 - `.vue`
 
-제외 경로:
+The scanner skips:
 
 - `node_modules`
 - `dist`
@@ -90,71 +90,56 @@ CLI 출력은 AI 코딩툴 컨텍스트를 과하게 채우지 않도록 짧게 
 - `.git`
 - `coverage`
 
-v0.1 키워드 후보:
-
-- `localStorage`
-- `sessionStorage`
-- `document.cookie`
-- `dangerouslySetInnerHTML`
-- `innerHTML`
-- `iframe`
-- `target="_blank"`
-- `window.open`
-- `postMessage`
-- `NEXT_PUBLIC_`
-- `VITE_`
-- `sourcemap`
-- `sourceMap`
-- `console.log`
-
 ### `boan-sensei report [--mode basic|blue|red|purple]`
 
-`.boan-sensei/findings.json`을 읽고 mode에 맞는 보고서를 생성합니다.
-
-```text
-SECURITY_REPORT.md
-SECURITY_BLUE_TEAM.md
-SECURITY_RED_TEAM_SIMULATION.md
-SECURITY_PURPLE_TEAM.md
-```
+Reads `.boan-sensei/findings.json` and writes the Markdown report for the selected mode.
 
 ### `boan-sensei todo`
 
-`.boan-sensei/findings.json`을 읽고 개발자 체크리스트를 생성합니다.
+Reads `.boan-sensei/findings.json` and writes `SECURITY_TODO.md`.
 
-```text
-SECURITY_TODO.md
-```
+## Modes
 
-## Finding 구조
+| Mode | Description | Report file |
+| --- | --- | --- |
+| `basic` | Default frontend security review candidate report | `SECURITY_REPORT.md` |
+| `blue` | Defender-oriented review report | `SECURITY_BLUE_TEAM.md` |
+| `red` | Red Team Simulation report | `SECURITY_RED_TEAM_SIMULATION.md` |
+| `purple` | Red perspective and Blue action report | `SECURITY_PURPLE_TEAM.md` |
 
-```ts
-{
-  id: string;
-  category: string;
-  risk: "high" | "medium" | "low";
-  status: "needs_review";
-  title: string;
-  message: string;
-  evidence: {
-    filePath: string;
-    lineNumber: number;
-    linePreview: string;
-  };
-}
-```
+Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. It only summarizes review questions from an attacker’s perspective based on local code signals.
 
-## 프로젝트 구조
+## Generated Files
 
-```text
-packages/core      핵심 스캔, 보고서, TODO 생성 로직
-apps/cli           Node.js CLI 엔트리포인트
-adapters           Claude Code, Cursor, Codex 사용 안내 초안
-templates          향후 Markdown 템플릿과 예시 출력 위치
-docs               프로젝트 철학, 설계 메모, 향후 문서
-```
+- `.boan-sensei/findings.json`
+- `SECURITY_REPORT.md`
+- `SECURITY_TODO.md`
+- `SECURITY_BLUE_TEAM.md`
+- `SECURITY_RED_TEAM_SIMULATION.md`
+- `SECURITY_PURPLE_TEAM.md`
 
-## 개발
+## Safety Disclaimer
+
+`boan-sensei` organizes frontend security review candidates as supporting material. It does not replace penetration testing, security certification, or professional security assessment.
+
+Recommended wording:
+
+- Review candidate
+- Needs review
+- Recommended check
+- Code signal detected
+
+## AI Coding Tool Adapters
+
+Draft adapter guidance is included for AI coding tools:
+
+- `adapters/claude/boan-sensei/SKILL.md`
+- `adapters/cursor/.cursor/rules/boan-sensei.mdc`
+- `adapters/codex/AGENTS.md`
+
+These files explain when to run `boan-sensei`, how to use modes, and how to keep wording cautious. MCP servers, automatic fixes, and full plugin integrations are outside the current scope.
+
+## Development
 
 ```bash
 pnpm install
@@ -163,16 +148,16 @@ pnpm typecheck
 pnpm build
 ```
 
-## v0.1 범위 밖
+Project layout:
 
-- 실제 취약 여부 확정
-- 침투 테스트
-- 보안 인증
-- MCP 서버
-- Claude Skill 배포 자동화
-- Cursor Rule 배포 자동화
-- Codex Plugin 구현
+```text
+packages/core      scanning, report generation, mode templates
+apps/cli           Node.js CLI entrypoint
+adapters           AI coding tool guidance
+templates          future template examples
+docs               project notes and design docs
+```
 
-## 보안 안내
+## License
 
-`boan-sensei`가 생성하는 보고서는 프론트엔드 보안 점검 후보를 정리하는 보조 자료입니다. 침투 테스트, 보안 인증, 전문 보안 진단을 대체하지 않습니다.
+This project is intended to be released as free open-source software. Add the repository license file before publishing a stable release.
