@@ -28,7 +28,11 @@ importers:
         specifier: ^22.10.2
         version: 22.20.0
 
-  packages/core: {}
+  packages/core:
+    dependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
 packages:
 

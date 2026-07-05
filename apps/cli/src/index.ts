@@ -3,6 +3,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
+  generatePrComment,
   generateReport,
   generateTodo,
   getSenseiComment,
@@ -34,6 +35,11 @@ try {
     const markdown = generateTodo(findingsFile.findings);
     await writeFile(resolve(process.cwd(), "SECURITY_TODO.md"), markdown, "utf8");
     console.log("boan-sensei: SECURITY_TODO.md를 생성했습니다.");
+  } else if (command === "pr-comment") {
+    const findingsFile = await readFindingsFile();
+    const markdown = generatePrComment(findingsFile.findings);
+    await writeFile(resolve(process.cwd(), ".boan-sensei", "pr-comment.md"), markdown, "utf8");
+    console.log("boan-sensei: .boan-sensei/pr-comment.md를 생성했습니다.");
   } else {
     printHelp();
     process.exitCode = command ? 1 : 0;
@@ -70,7 +76,8 @@ function printHelp() {
 Usage:
   boan-sensei scan [--mode basic|blue|red|purple] [--diff]
   boan-sensei report [--mode basic|blue|red|purple]
-  boan-sensei todo`);
+  boan-sensei todo
+  boan-sensei pr-comment`);
 }
 
 function hasOption(name: string): boolean {

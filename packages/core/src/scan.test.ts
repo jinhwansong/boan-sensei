@@ -127,20 +127,25 @@ describe("scanProject", () => {
     });
   });
 
-  test("marks keyword matches inside simple string literal assignments as low confidence", async () => {
+  test("does not report keyword matches that only appear inside string literals", async () => {
     const root = await makeProject();
     await writeProjectFile(root, "src/message.ts", "const message = \"innerHTML 대신 textContent를 사용하세요\";\n");
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(0);
+  });
+
+  test("keeps keyword findings for actual property access after AST filtering", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "src/html.ts", "element.innerHTML = html;\n");
 
     const findings = await scanProject(root);
 
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({
       category: "html-injection",
-      status: "low_confidence",
-      evidence: {
-        filePath: "src/message.ts",
-        lineNumber: 1
-      }
+      status: "needs_review"
     });
   });
 
@@ -250,6 +255,67 @@ describe("scanProject", () => {
     expect(findings).toHaveLength(0);
   });
 
+  test("does not flag multiline file inputs when accept is present in the same tag", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/Upload.tsx",
+      ["<input", "  type=\"file\"", "  accept=\"image/*\"", "/>"].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(0);
+  });
+
+  test("flags multiline file inputs without accept as low confidence", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "src/Upload.tsx", ["<input", "  type=\"file\"", "/>"].join("\n"));
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      category: "file-upload",
+      status: "low_confidence",
+      title: "파일 업로드 accept 속성 확인 필요"
+    });
+  });
+
+  test("collects CSP review candidates from static HTML entry files", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "index.html", "<html><head></head><body></body></html>\n");
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      category: "csp",
+      risk: "low",
+      title: "CSP 정책 확인 필요"
+    });
+    expect(findings[0].message).toContain("정적 HTML");
+  });
+
+  test("collects CSP unsafe directive candidates without confirming exploitability", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "index.html",
+      "<meta http-equiv=\"Content-Security-Policy\" content=\"script-src 'self' 'unsafe-inline'\">\n"
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      category: "csp",
+      risk: "medium",
+      title: "CSP unsafe directive 확인 필요"
+    });
+    expect(findings[0].message).toContain("검토를 권장합니다");
+  });
+
   test("honors .boan-senseiignore file and directory patterns", async () => {
     const root = await makeProject();
     await writeProjectFile(root, ".boan-senseiignore", ["src/generated/", "*.test.ts"].join("\n"));
@@ -346,6 +412,20 @@ describe("scanProject", () => {
       "axios 버전 확인 필요",
       "axios lockfile 버전 확인 필요"
     ]);
+  });
+
+  test("does not treat semver ranges as lockfile mismatches when a resolved version is present", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "package.json", JSON.stringify({ dependencies: { axios: "^1.6.0" } }));
+    await writeProjectFile(root, "package-lock.json", JSON.stringify({
+      packages: {
+        "node_modules/axios": { version: "1.6.1" }
+      }
+    }));
+
+    const findings = await scanProject(root, { registryFetch: registryLatest() });
+
+    expect(findings.map((finding) => finding.title)).toEqual(["axios 버전 확인 필요"]);
   });
 
   test("writes findings and basic mode to .boan-sensei/findings.json by default", async () => {

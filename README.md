@@ -98,6 +98,7 @@ These are the commands the adapters are designed to run:
 boan-sensei scan
 boan-sensei report
 boan-sensei todo
+boan-sensei pr-comment
 ```
 
 Mode-specific reports:
@@ -148,6 +149,10 @@ Reads `.boan-sensei/findings.json` and writes the Markdown report for the select
 ### `boan-sensei todo`
 
 Reads `.boan-sensei/findings.json` and writes `SECURITY_TODO.md`.
+
+### `boan-sensei pr-comment`
+
+Reads `.boan-sensei/findings.json` and writes a cautious PR comment body to `.boan-sensei/pr-comment.md`.
 
 ## Modes
 

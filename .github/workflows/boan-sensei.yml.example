@@ -6,6 +6,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -31,9 +35,17 @@ jobs:
       - name: Run boan-sensei scan
         run: pnpm --filter boan-sensei exec boan-sensei scan --mode blue --diff
 
+      - name: Generate PR comment body
+        if: github.event_name == 'pull_request'
+        run: pnpm --filter boan-sensei exec boan-sensei pr-comment
+
+      - name: Publish PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file .boan-sensei/pr-comment.md
+
       - name: Fail on high review candidates
         shell: bash
         run: |
           node -e "const f=require('./.boan-sensei/findings.json'); const high=f.findings.filter((item)=>item.risk==='high'); if (high.length) { console.error(`High review candidates: ${high.length}`); process.exit(1); }"
-
-      # TODO: Add optional PR comment publishing after the review workflow and wording policy are finalized.

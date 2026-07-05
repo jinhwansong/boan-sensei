@@ -3,6 +3,7 @@ import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { relative, resolve, sep } from "node:path";
+import ts from "typescript";
 import { DEFAULT_MODE, resolveMode } from "./modes.js";
 import { SCAN_RULES, type ScanRule } from "./rules.js";
 import type { BoanMode, Finding, FindingsFile, ScanProjectOptions } from "./types.js";
@@ -13,6 +14,7 @@ const SUPPORTED_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".vue"]);
 const DIFF_SUPPORTED_EXTENSIONS = new Set([...SUPPORTED_EXTENSIONS, ".html"]);
 const DEPENDENCY_PACKAGES = ["axios", "dompurify", "js-cookie", "vite", "next", "react"] as const;
 const LOCKFILES = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"];
+const HTML_ENTRY_FILES = ["index.html"];
 type RegistryFetch = NonNullable<ScanProjectOptions["registryFetch"]>;
 type LockfileVersion = { version: string; filePath: string };
 
@@ -27,15 +29,20 @@ export async function scanProject(projectRoot = process.cwd(), options: ScanProj
   for (const filePath of files.sort()) {
     const contents = await readFile(filePath, "utf8");
     const lines = contents.split(/\r?\n/);
+    const sourceFile = createSourceFile(filePath, contents);
 
     lines.forEach((line, index) => {
       if (shouldSkipLine(line)) {
         return;
       }
       const scannableLine = getScannableLine(line);
+      const lineStart = sourceFile?.getPositionOfLineAndCharacter(index, 0) ?? 0;
 
       for (const rule of SCAN_RULES) {
         if (!matchesRule(scannableLine, rule)) {
+          continue;
+        }
+        if (rule.keyword && !isKeywordCodeSignal(sourceFile, scannableLine, lineStart, rule.keyword)) {
           continue;
         }
 
@@ -54,9 +61,12 @@ export async function scanProject(projectRoot = process.cwd(), options: ScanProj
         });
       }
     });
+
+    findings.push(...collectFileUploadFindings(root, filePath, contents, findings.length));
   }
 
   findings.push(...(await collectDependencyFindings(root, findings.length, ignorePatterns, options.registryFetch)));
+  findings.push(...(await collectCspFindings(root, findings.length, ignorePatterns)));
 
   if (options.write) {
     await writeFindingsFile(root, findings, mode);
@@ -138,7 +148,7 @@ async function collectDependencyFindings(
       }
 
       const lockfileVersion = lockfileVersions.get(packageName);
-      if (lockfileVersion && normalizeVersion(version) !== normalizeVersion(lockfileVersion.version)) {
+      if (lockfileVersion && shouldCompareLockfileVersion(version) && normalizeVersion(version) !== normalizeVersion(lockfileVersion.version)) {
         findings.push({
           id: formatFindingId(offset + findings.length + 1),
           category: "dependency",
@@ -170,6 +180,53 @@ async function collectDependencyFindings(
         linePreview: "package-lock.json, pnpm-lock.yaml, yarn.lock not found"
       }
     });
+  }
+
+  return findings;
+}
+
+async function collectCspFindings(root: string, offset: number, ignorePatterns: string[]): Promise<Finding[]> {
+  const htmlFiles = await collectHtmlEntryFiles(root, ignorePatterns);
+  const findings: Finding[] = [];
+
+  for (const filePath of htmlFiles.sort()) {
+    const contents = await readFile(filePath, "utf8");
+    const relativePath = toPortablePath(relative(root, filePath));
+    const cspIndex = contents.search(/Content-Security-Policy/i);
+
+    if (cspIndex === -1) {
+      findings.push({
+        id: formatFindingId(offset + findings.length + 1),
+        category: "csp",
+        risk: "low",
+        status: "needs_review",
+        title: "CSP 정책 확인 필요",
+        message: "정적 HTML 엔트리에서 Content-Security-Policy 문자열이 확인되지 않았습니다. 런타임 헤더 설정 여부는 별도 확인이 필요합니다.",
+        evidence: {
+          filePath: relativePath,
+          lineNumber: 1,
+          linePreview: "Content-Security-Policy not found in static HTML"
+        }
+      });
+      continue;
+    }
+
+    const unsafeMatch = contents.match(/'unsafe-(?:inline|eval)'/i);
+    if (unsafeMatch?.index !== undefined) {
+      findings.push({
+        id: formatFindingId(offset + findings.length + 1),
+        category: "csp",
+        risk: "medium",
+        status: "needs_review",
+        title: "CSP unsafe directive 확인 필요",
+        message: "CSP에 unsafe directive 후보가 포함되어 있습니다. 실제 영향은 단정하지 말고 필요한 예외인지 검토를 권장합니다.",
+        evidence: {
+          filePath: relativePath,
+          lineNumber: getLineNumber(contents, unsafeMatch.index),
+          linePreview: getLinePreview(contents, unsafeMatch.index)
+        }
+      });
+    }
   }
 
   return findings;
@@ -292,6 +349,10 @@ function normalizeVersion(version: string): string {
   return version.replace(/^[~^<>=\s]+/, "").trim();
 }
 
+function shouldCompareLockfileVersion(version: string): boolean {
+  return !/^(?:workspace:|npm:|file:|link:|git:|[~^*<>=])/.test(version.trim()) && !/[xX*]|\|\|/.test(version);
+}
+
 function shouldSkipLine(line: string): boolean {
   const trimmed = line.trim();
   return trimmed.startsWith("//") || /^\/\*.*\*\/$/.test(trimmed);
@@ -376,6 +437,115 @@ function matchesRule(line: string, rule: ScanRule): boolean {
   return rule.pattern ? rule.pattern.test(line) : false;
 }
 
+function createSourceFile(filePath: string, contents: string): ts.SourceFile | undefined {
+  if (filePath.endsWith(".vue")) {
+    return undefined;
+  }
+
+  return ts.createSourceFile(filePath, contents, ts.ScriptTarget.Latest, true, getScriptKind(filePath));
+}
+
+function getScriptKind(filePath: string): ts.ScriptKind {
+  if (filePath.endsWith(".tsx")) {
+    return ts.ScriptKind.TSX;
+  }
+  if (filePath.endsWith(".jsx")) {
+    return ts.ScriptKind.JSX;
+  }
+  if (filePath.endsWith(".ts")) {
+    return ts.ScriptKind.TS;
+  }
+  if (filePath.endsWith(".js")) {
+    return ts.ScriptKind.JS;
+  }
+  return ts.ScriptKind.Unknown;
+}
+
+function isKeywordCodeSignal(
+  sourceFile: ts.SourceFile | undefined,
+  line: string,
+  lineStart: number,
+  keyword: string
+): boolean {
+  if (!sourceFile || keyword.includes("\"")) {
+    return true;
+  }
+
+  let index = line.indexOf(keyword);
+  while (index !== -1) {
+    if (isCodePosition(sourceFile, lineStart + index)) {
+      return true;
+    }
+    index = line.indexOf(keyword, index + keyword.length);
+  }
+
+  return false;
+}
+
+function isCodePosition(sourceFile: ts.SourceFile, position: number): boolean {
+  const node = findSmallestNodeAtPosition(sourceFile, position);
+  if (!node) {
+    return true;
+  }
+
+  return !isStringLikeNode(node);
+}
+
+function findSmallestNodeAtPosition(sourceFile: ts.SourceFile, position: number): ts.Node | undefined {
+  let best: ts.Node | undefined;
+
+  function visit(node: ts.Node) {
+    if (position < node.getFullStart() || position >= node.getEnd()) {
+      return;
+    }
+    best = node;
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return best;
+}
+
+function isStringLikeNode(node: ts.Node): boolean {
+  return (
+    ts.isStringLiteralLike(node) ||
+    ts.isNoSubstitutionTemplateLiteral(node) ||
+    node.kind === ts.SyntaxKind.TemplateHead ||
+    node.kind === ts.SyntaxKind.TemplateMiddle ||
+    node.kind === ts.SyntaxKind.TemplateTail ||
+    node.kind === ts.SyntaxKind.JsxText
+  );
+}
+
+function collectFileUploadFindings(root: string, filePath: string, contents: string, offset: number): Finding[] {
+  const findings: Finding[] = [];
+  const inputPattern = /<input\b[\s\S]*?>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = inputPattern.exec(contents)) !== null) {
+    const tag = match[0];
+    if (!/\btype\s*=\s*["']file["']/i.test(tag) || /\baccept\s*=/i.test(tag)) {
+      continue;
+    }
+
+    findings.push({
+      id: formatFindingId(offset + findings.length + 1),
+      category: "file-upload",
+      risk: "low",
+      status: "low_confidence",
+      title: "파일 업로드 accept 속성 확인 필요",
+      message: "파일 업로드 입력에서 accept 속성 확인이 필요한 낮은 신뢰도 점검 후보입니다.",
+      evidence: {
+        filePath: toPortablePath(relative(root, filePath)),
+        lineNumber: getLineNumber(contents, match.index),
+        linePreview: getLinePreview(contents, match.index)
+      }
+    });
+  }
+
+  return findings;
+}
+
 export async function writeFindingsFile(
   projectRoot: string,
   findings: Finding[],
@@ -439,6 +609,69 @@ async function collectScanFiles(root: string, srcRoot: string, ignorePatterns: s
     console.warn("boan-sensei: git diff 파일 목록을 확인할 수 없어 전체 스캔으로 fallback합니다.");
     return collectFiles(root, srcRoot, ignorePatterns);
   }
+}
+
+async function collectHtmlEntryFiles(root: string, ignorePatterns: string[]): Promise<string[]> {
+  const files: string[] = [];
+
+  for (const filePath of HTML_ENTRY_FILES) {
+    if (isIgnoredPath(filePath, ignorePatterns)) {
+      continue;
+    }
+    try {
+      await access(resolve(root, filePath));
+      files.push(resolve(root, filePath));
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOENT") {
+        throw error;
+      }
+    }
+  }
+
+  files.push(...(await collectFilesByExtension(root, resolve(root, "public"), ".html", ignorePatterns)));
+  return files;
+}
+
+async function collectFilesByExtension(
+  root: string,
+  dir: string,
+  extension: string,
+  ignorePatterns: string[]
+): Promise<string[]> {
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
+
+  const files: string[] = [];
+  for (const entry of entries) {
+    const fullPath = resolve(dir, entry.name);
+    const relativePath = toPortablePath(relative(root, fullPath));
+
+    if (isIgnoredPath(relativePath, ignorePatterns)) {
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      if (!EXCLUDED_DIRS.has(entry.name)) {
+        files.push(...(await collectFilesByExtension(root, fullPath, extension, ignorePatterns)));
+      }
+      continue;
+    }
+
+    if (entry.isFile() && getExtension(entry.name) === extension) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
 }
 
 async function collectFiles(root: string, dir: string, ignorePatterns: string[]): Promise<string[]> {
@@ -519,6 +752,18 @@ function getFindingComparisonKey(finding: Finding): string {
     finding.evidence.filePath,
     finding.evidence.lineNumber
   ].join("|");
+}
+
+function getLineNumber(contents: string, index: number): number {
+  return contents.slice(0, index).split(/\r?\n/).length;
+}
+
+function getLinePreview(contents: string, index: number): string {
+  const before = contents.slice(0, index);
+  const lineStart = Math.max(before.lastIndexOf("\n") + 1, 0);
+  const lineEndIndex = contents.indexOf("\n", index);
+  const lineEnd = lineEndIndex === -1 ? contents.length : lineEndIndex;
+  return contents.slice(lineStart, lineEnd).trim();
 }
 
 function getExtension(fileName: string): string {

@@ -6,7 +6,7 @@ export {
   resolveMode
 } from "./modes.js";
 export { SCAN_RULES, type ScanRule } from "./rules.js";
-export { generateReport, generateTodo } from "./report.js";
+export { generatePrComment, generateReport, generateTodo } from "./report.js";
 export { getSenseiComment } from "./sensei-comment.js";
 export { scanProject, writeFindingsFile } from "./scan.js";
 export type {

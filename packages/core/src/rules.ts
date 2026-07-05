@@ -178,13 +178,5 @@ export const SCAN_RULES: ScanRule[] = [
     risk: "low",
     title: "인증 우회/디버그 플래그 후보 확인 필요",
     message: "개발 또는 테스트용 플래그 후보가 발견되었습니다. 운영 반영 전 의도와 적용 범위 확인을 권장합니다."
-  },
-  {
-    pattern: /<input\b(?=[^>]*\btype=["']file["'])(?![^>]*\baccept=)[^>]*>/i,
-    category: "file-upload",
-    risk: "low",
-    status: "low_confidence",
-    title: "파일 업로드 accept 속성 확인 필요",
-    message: "파일 업로드 입력에서 accept 속성 확인이 필요한 낮은 신뢰도 점검 후보입니다."
   }
 ];
