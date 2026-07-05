@@ -28,6 +28,15 @@ Supported report modes:
 - `red`
 - `purple`
 
+Mode examples:
+
+```bash
+npx boan-sensei scan --mode basic
+npx boan-sensei scan --mode blue
+npx boan-sensei scan --mode red
+npx boan-sensei scan --mode purple
+```
+
 ## Required Wording
 
 Do not present scan results as confirmed security impact.

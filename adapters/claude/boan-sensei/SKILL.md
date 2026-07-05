@@ -33,6 +33,15 @@ Supported modes:
 - `red`: simulation questions from an attacker-minded review perspective
 - `purple`: paired Red questions and Blue actions
 
+Mode examples:
+
+```bash
+npx boan-sensei scan --mode basic
+npx boan-sensei scan --mode blue
+npx boan-sensei scan --mode red
+npx boan-sensei scan --mode purple
+```
+
 ## Language Rules
 
 Never describe a result as confirmed security impact unless the user has provided separate verified evidence.

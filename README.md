@@ -25,6 +25,12 @@ mode를 지정할 수도 있습니다. 기본값은 `basic`입니다.
 ```bash
 npx boan-sensei scan --mode blue
 npx boan-sensei report --mode blue
+
+npx boan-sensei scan --mode red
+npx boan-sensei report --mode red
+
+npx boan-sensei scan --mode purple
+npx boan-sensei report --mode purple
 ```
 
 현재 레포에서 개발 중인 CLI를 실행하려면:
@@ -43,6 +49,8 @@ pnpm --filter boan-sensei exec boan-sensei scan --mode basic
 | `blue` | `SECURITY_BLUE_TEAM.md` | 방어자 관점의 확인 항목, 권장 조치, 운영 반영 전 검토 |
 | `red` | `SECURITY_RED_TEAM_SIMULATION.md` | 공격자 관점 검토 질문 정리. 실제 공격, 침투, 우회 자동화를 수행하지 않음 |
 | `purple` | `SECURITY_PURPLE_TEAM.md` | Red 관점 질문과 Blue 조치를 한 쌍으로 정리 |
+
+red mode는 실제 공격, 침투, 우회, 익스플로잇 자동화를 수행하지 않습니다. 확인된 코드 신호를 바탕으로 공격자 관점에서 검토할 질문을 정리하는 Red Team Simulation 기능입니다.
 
 ## CLI 출력 예시
 

@@ -56,8 +56,13 @@ describe("boan modes", () => {
     expect(stored.mode).toBe("basic");
   });
 
-  test("maps blue mode to the Blue Team report file name", () => {
-    expect(REPORT_FILE_BY_MODE.blue).toBe("SECURITY_BLUE_TEAM.md");
+  test("maps every mode to the expected report file name", () => {
+    expect(REPORT_FILE_BY_MODE).toEqual({
+      basic: "SECURITY_REPORT.md",
+      blue: "SECURITY_BLUE_TEAM.md",
+      red: "SECURITY_RED_TEAM_SIMULATION.md",
+      purple: "SECURITY_PURPLE_TEAM.md"
+    });
   });
 
   test("red mode report includes a safety notice", () => {

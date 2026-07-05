@@ -16,6 +16,15 @@ npx boan-sensei todo
 
 For specialized reports, use `--mode blue`, `--mode red`, or `--mode purple`.
 
+Mode examples:
+
+```bash
+npx boan-sensei scan --mode basic
+npx boan-sensei scan --mode blue
+npx boan-sensei scan --mode red
+npx boan-sensei scan --mode purple
+```
+
 Generated files:
 
 - `.boan-sensei/findings.json`
