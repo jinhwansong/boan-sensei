@@ -92,6 +92,8 @@ If the `boan-sensei` command is not available in the target tool, the adapter sh
 
 ## CLI Usage
 
+In normal adapter-first use, these commands are usually called by the adapter rather than typed directly by the user.
+
 These are the commands the adapters are designed to run:
 
 ```bash

@@ -217,6 +217,7 @@ describe("scanProject", () => {
       "file-upload"
     ]);
     expect(findings.filter((finding) => finding.category === "secret").every((finding) => finding.risk === "high")).toBe(true);
+    expect(findings.find((finding) => finding.evidence.linePreview === "const skipAuth = true;")?.risk).toBe("medium");
     expect(findings.find((finding) => finding.category === "file-upload")?.status).toBe("low_confidence");
   });
 

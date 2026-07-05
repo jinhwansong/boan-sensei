@@ -24,5 +24,5 @@ export function resolveMode(value: string | undefined): BoanMode {
     return value;
   }
 
-  throw new Error(`지원하지 않는 mode: ${value}`);
+  throw new Error("지원하지 않는 mode입니다. basic/blue/red/purple 중 하나를 사용하세요.");
 }

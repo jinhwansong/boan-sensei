@@ -92,6 +92,8 @@ pnpm build
 
 ## 사용법
 
+일반적인 adapter-first 사용에서는 사용자가 직접 입력하기보다 adapter가 이 명령들을 호출합니다.
+
 adapter가 실행하도록 설계된 기본 명령어는 다음과 같습니다.
 
 ```bash

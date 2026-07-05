@@ -80,6 +80,8 @@ describe("boan modes", () => {
   });
 
   test("invalid mode input returns a clear error", () => {
-    expect(() => resolveMode("orange")).toThrow("지원하지 않는 mode: orange");
+    expect(() => resolveMode("orange")).toThrow(
+      "지원하지 않는 mode입니다. basic/blue/red/purple 중 하나를 사용하세요."
+    );
   });
 });
