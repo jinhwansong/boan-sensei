@@ -15,6 +15,16 @@ const DIFF_SUPPORTED_EXTENSIONS = new Set([...SUPPORTED_EXTENSIONS, ".html"]);
 const DEPENDENCY_PACKAGES = ["axios", "dompurify", "js-cookie", "vite", "next", "react"] as const;
 const LOCKFILES = ["package-lock.json", "pnpm-lock.yaml", "yarn.lock"];
 const HTML_ENTRY_FILES = ["index.html"];
+const CSP_FRAMEWORK_FILES = [
+  "next.config.js",
+  "next.config.mjs",
+  "next.config.ts",
+  "vite.config.js",
+  "vite.config.mjs",
+  "vite.config.ts",
+  "src/middleware.js",
+  "src/middleware.ts"
+];
 type RegistryFetch = NonNullable<ScanProjectOptions["registryFetch"]>;
 type LockfileVersion = { version: string; filePath: string };
 
@@ -187,14 +197,17 @@ async function collectDependencyFindings(
 
 async function collectCspFindings(root: string, offset: number, ignorePatterns: string[]): Promise<Finding[]> {
   const htmlFiles = await collectHtmlEntryFiles(root, ignorePatterns);
+  const frameworkFiles = await collectExistingFiles(root, CSP_FRAMEWORK_FILES, ignorePatterns);
+  const frameworkPolicies = await collectCspPolicyFindings(root, frameworkFiles, offset);
   const findings: Finding[] = [];
+  const hasFrameworkCsp = frameworkPolicies.hasCsp;
 
   for (const filePath of htmlFiles.sort()) {
     const contents = await readFile(filePath, "utf8");
     const relativePath = toPortablePath(relative(root, filePath));
     const cspIndex = contents.search(/Content-Security-Policy/i);
 
-    if (cspIndex === -1) {
+    if (cspIndex === -1 && !hasFrameworkCsp) {
       findings.push({
         id: formatFindingId(offset + findings.length + 1),
         category: "csp",
@@ -229,7 +242,51 @@ async function collectCspFindings(root: string, offset: number, ignorePatterns: 
     }
   }
 
+  findings.push(...frameworkPolicies.findings.map((finding, index) => ({
+    ...finding,
+    id: formatFindingId(offset + findings.length + index + 1)
+  })));
+
   return findings;
+}
+
+async function collectCspPolicyFindings(
+  root: string,
+  filePaths: string[],
+  offset: number
+): Promise<{ hasCsp: boolean; findings: Finding[] }> {
+  const findings: Finding[] = [];
+  let hasCsp = false;
+
+  for (const filePath of filePaths.sort()) {
+    const contents = await readFile(filePath, "utf8");
+    const cspIndex = contents.search(/Content-Security-Policy/i);
+    if (cspIndex === -1) {
+      continue;
+    }
+    hasCsp = true;
+
+    const unsafeMatch = contents.match(/'unsafe-(?:inline|eval)'/i);
+    if (unsafeMatch?.index === undefined) {
+      continue;
+    }
+
+    findings.push({
+      id: formatFindingId(offset + findings.length + 1),
+      category: "csp",
+      risk: "medium",
+      status: "needs_review",
+      title: "CSP unsafe directive 확인 필요",
+      message: "프레임워크 header 설정의 CSP에 unsafe directive 후보가 포함되어 있습니다. 실제 영향은 단정하지 말고 필요한 예외인지 검토를 권장합니다.",
+      evidence: {
+        filePath: toPortablePath(relative(root, filePath)),
+        lineNumber: getLineNumber(contents, unsafeMatch.index),
+        linePreview: getLinePreview(contents, unsafeMatch.index)
+      }
+    });
+  }
+
+  return { hasCsp, findings };
 }
 
 async function hasAnyLockfile(root: string, ignorePatterns: string[]): Promise<boolean> {
@@ -253,8 +310,8 @@ async function hasAnyLockfile(root: string, ignorePatterns: string[]): Promise<b
 async function collectLockfileVersions(root: string, ignorePatterns: string[]): Promise<Map<string, LockfileVersion>> {
   const versions = new Map<string, LockfileVersion>();
   await readPackageLockVersions(root, ignorePatterns, versions);
-  await readTextLockVersions(root, "pnpm-lock.yaml", ignorePatterns, versions);
-  await readTextLockVersions(root, "yarn.lock", ignorePatterns, versions);
+  await readPnpmLockVersions(root, ignorePatterns, versions);
+  await readYarnLockVersions(root, ignorePatterns, versions);
   return versions;
 }
 
@@ -290,12 +347,12 @@ async function readPackageLockVersions(
   }
 }
 
-async function readTextLockVersions(
+async function readPnpmLockVersions(
   root: string,
-  filePath: string,
   ignorePatterns: string[],
   versions: Map<string, LockfileVersion>
 ): Promise<void> {
+  const filePath = "pnpm-lock.yaml";
   if (isIgnoredPath(filePath, ignorePatterns)) {
     return;
   }
@@ -311,21 +368,114 @@ async function readTextLockVersions(
     throw error;
   }
 
+  const parsedVersions = parsePnpmLockVersions(contents);
+  setTrackedLockfileVersions(filePath, parsedVersions, versions);
+}
+
+async function readYarnLockVersions(
+  root: string,
+  ignorePatterns: string[],
+  versions: Map<string, LockfileVersion>
+): Promise<void> {
+  const filePath = "yarn.lock";
+  if (isIgnoredPath(filePath, ignorePatterns)) {
+    return;
+  }
+
+  let contents;
+  try {
+    contents = await readFile(resolve(root, filePath), "utf8");
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
+
+  const parsedVersions = parseYarnLockVersions(contents);
+  setTrackedLockfileVersions(filePath, parsedVersions, versions);
+}
+
+function setTrackedLockfileVersions(
+  filePath: string,
+  parsedVersions: Map<string, string>,
+  versions: Map<string, LockfileVersion>
+): void {
   for (const packageName of DEPENDENCY_PACKAGES) {
-    if (versions.has(packageName)) {
+    const version = parsedVersions.get(packageName);
+    if (version && !versions.has(packageName)) {
+      versions.set(packageName, { version, filePath });
+    }
+  }
+}
+
+function parsePnpmLockVersions(contents: string): Map<string, string> {
+  const versions = new Map<string, string>();
+  const lines = contents.split(/\r?\n/);
+  let inPackages = false;
+
+  for (const line of lines) {
+    if (/^\S/.test(line)) {
+      inPackages = line.trim() === "packages:";
+      continue;
+    }
+    if (!inPackages) {
       continue;
     }
 
-    const escaped = packageName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match =
-      contents.match(new RegExp(`${escaped}@[^\\n:]+:\\s*\\n(?:\\s+[^\\n]+\\n)*?\\s+version[: ]+["']?([^"'\\s]+)`, "m")) ??
-      contents.match(new RegExp(`/${escaped}@([^:/\\s]+)`, "m")) ??
-      contents.match(new RegExp(`${escaped}@([^:\\s]+):`, "m"));
-
-    if (match?.[1]) {
-      versions.set(packageName, { version: match[1], filePath });
+    const keyMatch = line.match(/^\s{2}['"]?(?:\/)?((?:@[^/]+\/)?[^@/'"]+)@([^:'"]+)/);
+    if (keyMatch && !versions.has(keyMatch[1])) {
+      versions.set(keyMatch[1], keyMatch[2]);
     }
   }
+
+  return versions;
+}
+
+function parseYarnLockVersions(contents: string): Map<string, string> {
+  const versions = new Map<string, string>();
+  const lines = contents.split(/\r?\n/);
+  let currentPackages: string[] = [];
+
+  for (const line of lines) {
+    if (line.trim().length === 0) {
+      continue;
+    }
+
+    if (!line.startsWith(" ")) {
+      currentPackages = line
+        .replace(/:$/, "")
+        .split(/,\s*/)
+        .map((key) => key.trim().replace(/^["']|["']$/g, ""))
+        .map(getPackageNameFromYarnKey)
+        .filter((packageName): packageName is string => Boolean(packageName));
+      continue;
+    }
+
+    const versionMatch = line.match(/^\s+version\s+["']?([^"'\s]+)["']?/);
+    if (!versionMatch) {
+      continue;
+    }
+
+    for (const packageName of currentPackages) {
+      if (!versions.has(packageName)) {
+        versions.set(packageName, versionMatch[1]);
+      }
+    }
+  }
+
+  return versions;
+}
+
+function getPackageNameFromYarnKey(key: string): string | undefined {
+  const withoutProtocol = key.replace(/^npm:/, "");
+  if (withoutProtocol.startsWith("@")) {
+    const match = withoutProtocol.match(/^(@[^/]+\/[^@]+)@/);
+    return match?.[1];
+  }
+  const match = withoutProtocol.match(/^([^@]+)@/);
+  return match?.[1];
 }
 
 async function fetchLatestPackageVersion(packageName: string, registryFetch?: RegistryFetch): Promise<string | undefined> {
@@ -543,7 +693,65 @@ function collectFileUploadFindings(root: string, filePath: string, contents: str
     });
   }
 
+  findings.push(...collectFileUploadWrapperFindings(root, filePath, contents, offset + findings.length));
+
   return findings;
+}
+
+function collectFileUploadWrapperFindings(root: string, filePath: string, contents: string, offset: number): Finding[] {
+  if (!/\.[jt]sx$/.test(filePath)) {
+    return [];
+  }
+
+  const uploadComponents = collectUploadComponentNames(contents);
+  if (uploadComponents.size === 0) {
+    return [];
+  }
+
+  const findings: Finding[] = [];
+
+  for (const componentName of uploadComponents) {
+    const usagePattern = new RegExp(`<${componentName}\\b([^>]*)\\/?>`, "g");
+    let usage: RegExpExecArray | null;
+
+    while ((usage = usagePattern.exec(contents)) !== null) {
+      const tag = usage[0];
+      if (tag.includes("function ") || /\baccept\s*=/.test(tag)) {
+        continue;
+      }
+
+      findings.push({
+        id: formatFindingId(offset + findings.length + 1),
+        category: "file-upload",
+        risk: "low",
+        status: "low_confidence",
+        title: "파일 업로드 accept prop 확인 필요",
+        message: `${componentName} 파일 업로드 래퍼 사용부에서 accept prop 확인이 필요한 낮은 신뢰도 점검 후보입니다.`,
+        evidence: {
+          filePath: toPortablePath(relative(root, filePath)),
+          lineNumber: getLineNumber(contents, usage.index),
+          linePreview: getLinePreview(contents, usage.index)
+        }
+      });
+    }
+  }
+
+  return findings;
+}
+
+function collectUploadComponentNames(contents: string): Set<string> {
+  const componentNames = new Set<string>();
+  const functionPattern = /function\s+([A-Z][A-Za-z0-9_]*)\s*\([^)]*\)\s*\{[\s\S]*?\n\}/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = functionPattern.exec(contents)) !== null) {
+    const body = match[0];
+    if (/<input\b[\s\S]*?\btype\s*=\s*["']file["'][\s\S]*?\baccept\s*=/i.test(body)) {
+      componentNames.add(match[1]);
+    }
+  }
+
+  return componentNames;
 }
 
 export async function writeFindingsFile(
@@ -614,7 +822,15 @@ async function collectScanFiles(root: string, srcRoot: string, ignorePatterns: s
 async function collectHtmlEntryFiles(root: string, ignorePatterns: string[]): Promise<string[]> {
   const files: string[] = [];
 
-  for (const filePath of HTML_ENTRY_FILES) {
+  files.push(...(await collectExistingFiles(root, HTML_ENTRY_FILES, ignorePatterns)));
+  files.push(...(await collectFilesByExtension(root, resolve(root, "public"), ".html", ignorePatterns)));
+  return files;
+}
+
+async function collectExistingFiles(root: string, filePaths: string[], ignorePatterns: string[]): Promise<string[]> {
+  const files: string[] = [];
+
+  for (const filePath of filePaths) {
     if (isIgnoredPath(filePath, ignorePatterns)) {
       continue;
     }
@@ -629,7 +845,6 @@ async function collectHtmlEntryFiles(root: string, ignorePatterns: string[]): Pr
     }
   }
 
-  files.push(...(await collectFilesByExtension(root, resolve(root, "public"), ".html", ignorePatterns)));
   return files;
 }
 
