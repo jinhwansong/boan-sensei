@@ -13,6 +13,8 @@ pnpm build
 
 The adapter expects a `boan-sensei` command to be available in the target workflow. During local development, use the repository command documented in each adapter README, or expose the built CLI in your tool environment.
 
+If the command is missing, the adapter should stop and ask the user how to expose the local CLI engine. It should not assume npm publishing is required.
+
 ## Claude
 
 Copy the Claude skill folder:
@@ -70,3 +72,8 @@ Adapters should use cautious wording:
 - Code signal detected
 
 Do not treat boan-sensei output as a final security decision.
+
+## Examples
+
+- `examples/frontend-sample`: a tiny project for checking `scan`, `report`, and `todo`.
+- `examples/adapter-install`: a copy guide for installing adapter files into another project.

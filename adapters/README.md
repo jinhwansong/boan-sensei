@@ -12,6 +12,12 @@ Start here:
 adapters/INSTALL.md
 ```
 
+For a copy-oriented example, see:
+
+```text
+examples/adapter-install
+```
+
 ## Adapter Files
 
 - Claude: `claude/boan-sensei/SKILL.md`
@@ -42,3 +48,14 @@ boan-sensei scan --mode purple
 - Use cautious language such as "Needs review" and "Recommended check".
 - Ask the user to review generated reports directly.
 - Do not implement MCP servers or automatic fixes as part of these adapters.
+
+## Try It Locally
+
+Use `examples/frontend-sample` after building the repository:
+
+```bash
+pnpm build
+cd examples/frontend-sample
+node ../../apps/cli/dist/index.js scan --mode basic
+node ../../apps/cli/dist/index.js report --mode basic
+```

@@ -6,7 +6,7 @@
 
 `boan-sensei` is an adapter-first frontend security review workflow pack for AI coding tools such as Codex, Cursor, and Claude Code.
 
-The CLI in `apps/cli` is the local execution engine that adapters call. The main goal is not “install a global CLI from npm first,” but “drop the right adapter into your AI coding tool and let it run a cautious local review workflow.”
+The CLI in `apps/cli` is the local execution engine that adapters call. The main goal is not to install a global CLI from npm first, but to place the right adapter into your AI coding tool and let it run a cautious local review workflow.
 
 ## What boan-sensei Does
 
@@ -23,7 +23,7 @@ The CLI in `apps/cli` is the local execution engine that adapters call. The main
 - It does not confirm security impact.
 - It does not perform penetration testing.
 - It does not scan external URLs.
-- It does not connect to a vulnerability database.
+- It does not connect to an external security database.
 - It does not run `npm audit`.
 - It does not automatically modify source code.
 
@@ -48,7 +48,7 @@ pnpm install
 pnpm build
 ```
 
-Then the adapter can call the local CLI command in the project workflow.
+If the `boan-sensei` command is not available in the target tool, the adapter should ask the user how to expose the local CLI instead of assuming npm publishing.
 
 ## CLI Usage
 
@@ -115,7 +115,7 @@ Reads `.boan-sensei/findings.json` and writes `SECURITY_TODO.md`.
 | `red` | Red Team Simulation report | `SECURITY_RED_TEAM_SIMULATION.md` |
 | `purple` | Red perspective and Blue action report | `SECURITY_PURPLE_TEAM.md` |
 
-Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. It only summarizes review questions from an attacker’s perspective based on local code signals.
+Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. It only summarizes review questions from an attacker's perspective based on local code signals.
 
 ## Generated Files
 
@@ -156,6 +156,11 @@ They explain:
 
 MCP servers, automatic fixes, and full marketplace-style plugin packaging are outside the current scope.
 
+## Examples
+
+- `examples/frontend-sample`: a tiny frontend project you can use to try `scan`, `report`, and `todo`.
+- `examples/adapter-install`: a copy guide for placing adapter files into another project.
+
 ## Development
 
 ```bash
@@ -173,6 +178,7 @@ apps/cli           Node.js CLI execution engine
 adapters           AI coding tool guidance
 templates          future template examples
 docs               project notes and design docs
+examples           runnable and copyable usage examples
 ```
 
 ## License

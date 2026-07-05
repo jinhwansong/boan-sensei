@@ -31,9 +31,16 @@ Mode examples:
 
 ```bash
 boan-sensei scan --mode basic
+boan-sensei report --mode basic
+
 boan-sensei scan --mode blue
+boan-sensei report --mode blue
+
 boan-sensei scan --mode red
+boan-sensei report --mode red
+
 boan-sensei scan --mode purple
+boan-sensei report --mode purple
 ```
 
 Generated files:
