@@ -46,3 +46,40 @@ export function generateTodo(findings: Finding[]): string {
   lines.push("");
   return lines.join("\n");
 }
+
+export function generatePrComment(findings: Finding[]): string {
+  const highCount = findings.filter((finding) => finding.risk === "high").length;
+  const mediumCount = findings.filter((finding) => finding.risk === "medium").length;
+  const lowCount = findings.filter((finding) => finding.risk === "low").length;
+  const lines = [
+    "## boan-sensei PR review candidates",
+    "",
+    `High review candidates: ${highCount}`,
+    `Medium review candidates: ${mediumCount}`,
+    `Low review candidates: ${lowCount}`,
+    "",
+    "boan-sensei는 정적 코드 신호를 점검 후보로 정리합니다. 실제 취약점 여부는 소유 권한이 있는 프로젝트 맥락에서 추가 확인이 필요합니다.",
+    ""
+  ];
+
+  if (findings.length === 0) {
+    lines.push("- 현재 규칙 기준으로 PR 코멘트에 올릴 점검 후보가 없습니다.");
+    lines.push("");
+    return lines.join("\n");
+  }
+
+  for (const finding of findings.slice(0, 20)) {
+    lines.push(`- ${finding.id} ${finding.title}`);
+    lines.push(`  - Risk: ${finding.risk}`);
+    lines.push(`  - Location: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``);
+    lines.push(`  - Check: ${finding.message}`);
+  }
+
+  if (findings.length > 20) {
+    lines.push("");
+    lines.push(`_Additional review candidates omitted from this comment: ${findings.length - 20}_`);
+  }
+
+  lines.push("");
+  return lines.join("\n");
+}

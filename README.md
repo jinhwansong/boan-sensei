@@ -98,6 +98,7 @@ These are the commands the adapters are designed to run:
 boan-sensei scan
 boan-sensei report
 boan-sensei todo
+boan-sensei pr-comment
 ```
 
 Mode-specific reports:
@@ -117,9 +118,10 @@ Future package distribution may also support `npx boan-sensei ...`, but npm publ
 
 ## Commands
 
-### `boan-sensei scan [--mode basic|blue|red|purple]`
+### `boan-sensei scan [--mode basic|blue|red|purple] [--diff]`
 
 Scans the current working directory and writes `.boan-sensei/findings.json`.
+Use `--diff` to scan changed supported files from `git diff --name-only`; if Git is unavailable, the scanner falls back to the normal full scan.
 
 The scanner checks `src` files with these extensions:
 
@@ -138,6 +140,8 @@ The scanner skips:
 - `.git`
 - `coverage`
 
+Add `.boan-senseiignore` at the project root to skip extra files or directories such as `dist/`, `src/generated/`, or `*.test.ts`.
+
 ### `boan-sensei report [--mode basic|blue|red|purple]`
 
 Reads `.boan-sensei/findings.json` and writes the Markdown report for the selected mode.
@@ -145,6 +149,10 @@ Reads `.boan-sensei/findings.json` and writes the Markdown report for the select
 ### `boan-sensei todo`
 
 Reads `.boan-sensei/findings.json` and writes `SECURITY_TODO.md`.
+
+### `boan-sensei pr-comment`
+
+Reads `.boan-sensei/findings.json` and writes a cautious PR comment body to `.boan-sensei/pr-comment.md`.
 
 ## Modes
 

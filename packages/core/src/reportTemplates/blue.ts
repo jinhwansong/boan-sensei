@@ -14,7 +14,7 @@ export function generateBlueReport(findings: Finding[], options: ReportOptions =
     "## 2. 점검 범위",
     "",
     `- 기준 경로: \`${projectRoot}\``,
-    "- 검사 방식: 지정 키워드 기반 정적 후보 수집",
+    "- 검사 방식: 지정 키워드 기반 정적 후보 수집과 의존성 메타데이터 확인",
     "- 관점: 방어자 확인 항목과 운영 반영 전 검토",
     "",
     "## 3. 점검 결과 요약",
