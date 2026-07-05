@@ -34,6 +34,8 @@ boan-sensei report --mode basic
 boan-sensei todo
 ```
 
+As an adapter-friendly single entry point, `boan-sensei review --mode basic` may be used to run the same scan, report, and TODO sequence. Keep the three-step flow above available for conservative tool workflows that prefer explicit commands.
+
 Mode examples:
 
 ```bash

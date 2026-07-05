@@ -7,6 +7,7 @@ export {
 } from "./modes.js";
 export { SCAN_RULES, type ScanRule } from "./rules.js";
 export { generatePrComment, generateReport, generateTodo } from "./report.js";
+export { runReviewWorkflow, type ReviewWorkflowOptions, type ReviewWorkflowResult } from "./review.js";
 export { getSenseiComment } from "./sensei-comment.js";
 export { scanProject, writeFindingsFile } from "./scan.js";
 export type {

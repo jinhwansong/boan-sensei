@@ -98,6 +98,7 @@ These are the commands the adapters are designed to run:
 
 ```bash
 boan-sensei scan
+boan-sensei review
 boan-sensei report
 boan-sensei todo
 boan-sensei pr-comment
@@ -143,6 +144,10 @@ The scanner skips:
 - `coverage`
 
 Add `.boan-senseiignore` at the project root to skip extra files or directories such as `dist/`, `src/generated/`, or `*.test.ts`.
+
+### `boan-sensei review [--mode basic|blue|red|purple] [--diff]`
+
+Runs `scan`, `report`, and `todo` in order as a single adapter-friendly entry point while keeping the same cautious review-candidate output.
 
 ### `boan-sensei report [--mode basic|blue|red|purple]`
 

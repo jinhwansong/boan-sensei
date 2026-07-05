@@ -98,8 +98,10 @@ adapter가 실행하도록 설계된 기본 명령어는 다음과 같습니다.
 
 ```bash
 boan-sensei scan
+boan-sensei review
 boan-sensei report
 boan-sensei todo
+boan-sensei pr-comment
 ```
 
 모드별 보고서 생성:
@@ -119,9 +121,10 @@ boan-sensei report --mode purple
 
 ## 명령어
 
-### `boan-sensei scan [--mode basic|blue|red|purple]`
+### `boan-sensei scan [--mode basic|blue|red|purple] [--diff]`
 
 현재 작업 디렉터리를 기준으로 검사하고 `.boan-sensei/findings.json`을 생성합니다.
+`--diff`를 사용하면 `git diff --name-only`의 변경된 지원 파일만 검사하며, Git을 사용할 수 없으면 일반 전체 검사로 돌아갑니다.
 
 검사 대상 확장자:
 
@@ -140,6 +143,12 @@ boan-sensei report --mode purple
 - `.git`
 - `coverage`
 
+프로젝트 루트의 `.boan-senseiignore`에 `dist/`, `src/generated/`, `*.test.ts` 같은 추가 제외 파일이나 디렉터리를 적을 수 있습니다.
+
+### `boan-sensei review [--mode basic|blue|red|purple] [--diff]`
+
+adapter-friendly 단일 진입점으로 `scan`, `report`, `todo`를 순서대로 실행하며, 동일하게 조심스러운 점검 후보 출력을 유지합니다.
+
 ### `boan-sensei report [--mode basic|blue|red|purple]`
 
 `.boan-sensei/findings.json`을 읽고 선택한 mode에 맞는 Markdown 보고서를 생성합니다.
@@ -147,6 +156,10 @@ boan-sensei report --mode purple
 ### `boan-sensei todo`
 
 `.boan-sensei/findings.json`을 읽고 `SECURITY_TODO.md`를 생성합니다.
+
+### `boan-sensei pr-comment`
+
+`.boan-sensei/findings.json`을 읽고 조심스러운 PR 코멘트 본문을 `.boan-sensei/pr-comment.md`에 생성합니다.
 
 ## 모드
 

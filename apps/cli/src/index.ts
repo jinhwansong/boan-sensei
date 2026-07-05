@@ -9,6 +9,7 @@ import {
   getSenseiComment,
   REPORT_FILE_BY_MODE,
   resolveMode,
+  runReviewWorkflow,
   scanProject,
   type FindingsFile
 } from "@boan-sensei/core";
@@ -24,6 +25,14 @@ try {
       `boan-sensei: ${mode} mode로 점검 후보 ${findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`
     );
     console.log(`보안선생 한마디: ${getSenseiComment(findings)}`);
+  } else if (command === "review") {
+    const result = await runReviewWorkflow(process.cwd(), { mode, diff: hasOption("--diff") });
+    console.log(
+      `boan-sensei: ${result.mode} mode로 점검 후보 ${result.findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`
+    );
+    console.log(`보안선생 한마디: ${result.senseiComment}`);
+    console.log(`boan-sensei: ${result.reportFile}를 생성했습니다.`);
+    console.log(`boan-sensei: ${result.todoFile}를 생성했습니다.`);
   } else if (command === "report") {
     const findingsFile = await readFindingsFile();
     const markdown = generateReport(findingsFile.findings, { projectRoot: findingsFile.projectRoot, mode });
@@ -75,6 +84,7 @@ function printHelp() {
 
 Usage:
   boan-sensei scan [--mode basic|blue|red|purple] [--diff]
+  boan-sensei review [--mode basic|blue|red|purple] [--diff]
   boan-sensei report [--mode basic|blue|red|purple]
   boan-sensei todo
   boan-sensei pr-comment`);
