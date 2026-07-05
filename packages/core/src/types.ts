@@ -1,6 +1,6 @@
 export type FindingRisk = "high" | "medium" | "low";
 
-export type FindingStatus = "needs_review";
+export type FindingStatus = "needs_review" | "low_confidence";
 
 export type BoanMode = "basic" | "blue" | "red" | "purple";
 
