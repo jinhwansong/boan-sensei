@@ -26,6 +26,10 @@ For a copy-oriented example, see:
 examples/adapter-install
 ```
 
+## Installation Path Verification
+
+The install paths documented here match the current repository scripts, but each AI coding tool may change how it discovers adapter or skill files. Before relying on these paths for distribution, verify the Codex, Cursor, and Claude Code locations against the latest official tool documentation.
+
 ## Adapter Files
 
 - Claude: `claude/boan-sensei/SKILL.md`
@@ -56,6 +60,8 @@ boan-sensei scan --mode purple
 - Use cautious language such as "Needs review" and "Recommended check".
 - Ask the user to review generated reports directly.
 - Do not implement MCP servers or automatic fixes as part of these adapters.
+
+For deeper domain-specific review, consult the shared drafts in the top-level `skills/` directory. Those drafts are not automatically invoked by the current CLI.
 
 ## Try It Locally
 

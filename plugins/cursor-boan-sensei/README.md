@@ -4,6 +4,8 @@ This is a Cursor plugin-style bundle for boan-sensei.
 
 It packages the Cursor rule file that teaches Cursor when and how to run the local boan-sensei CLI workflow.
 
+For deeper domain-specific review, consult the shared top-level drafts such as `skills/xss-review/SKILL.md`, `skills/token-auth-review/SKILL.md`, and `skills/dependency-review/SKILL.md`. These are not automatically wired to a `--skill` CLI option.
+
 ## Structure
 
 ```text
@@ -19,6 +21,8 @@ Copy the rule into a target project:
 <target-project>/.cursor/rules/boan-sensei.mdc
 ```
 
+Before distribution, verify this Cursor rule installation path against the latest official Cursor documentation.
+
 Or use:
 
 ```bash
@@ -33,4 +37,4 @@ Windows PowerShell:
 
 ## Safety
 
-This bundle collects review candidates and asks the user to review generated Markdown directly. It does not perform penetration testing or automatic source modification.
+This bundle collects review candidates and asks the user to review generated Markdown directly. Use cautious language such as "Review candidate", "Needs review", "Recommended check", and "Code signal detected". Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. Do not create or assume an MCP server for boan-sensei. It does not perform penetration testing or automatic source modification.

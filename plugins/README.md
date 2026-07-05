@@ -14,6 +14,8 @@ This directory contains tool-specific plugin bundles for Codex, Cursor, and Clau
 
 Use `adapters/` when you want the smallest possible instruction file. Use `skills/` as the shared analysis content layer. Use `plugins/` when you want a ready-to-copy bundle for a specific AI coding tool.
 
+The top-level `skills/` directory is different from the Codex plugin-internal `plugins/codex-boan-sensei/skills/` directory. The plugin-internal directory is required by the Codex plugin manifest (`"skills": "./skills/"`) and contains the plugin's own loadable skill. The top-level `skills/` directory contains shared domain review drafts that plugin bundles can reference when deeper analysis is needed. The current CLI does not automatically wire these drafts to a `--skill` option.
+
 ## Bundle Layout
 
 | Tool | Source bundle | Installed target | Notes |
@@ -32,7 +34,13 @@ boan-sensei todo
 
 The bundles do not add MCP servers, automatic source modification, external URL scanning, or npm publishing assumptions.
 
+For deeper domain-specific review, consult the shared drafts in the top-level `skills/<name>/SKILL.md` files.
+
 Use `scripts/install-plugin.ps1` or `scripts/install-plugin.sh` to copy a bundle into a target project or tool-specific folder.
+
+## Installation Path Verification
+
+The install paths documented here match the current repository scripts, but they still need separate verification against the latest official Codex, Cursor, and Claude Code documentation before distribution. This repository does not claim those tool-specific discovery paths are permanently correct.
 
 ## Install
 

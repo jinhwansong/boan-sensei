@@ -61,3 +61,13 @@ claude -> <target>/boan-sensei/
 ```
 
 The plugin installer also avoids silent overwrites. Existing targets are copied to `.boan-sensei-plugin/` as merge candidates.
+
+## Adapter/Plugin Sync Check
+
+Use this lightweight check after editing adapter or plugin guidance:
+
+```bash
+sh scripts/check-adapter-plugin-sync.sh
+```
+
+It verifies that the adapter files and their matching plugin bundle files still contain the core safety wording, the human-review reminder, the MCP server non-goal, and the top-level `skills/` reference.

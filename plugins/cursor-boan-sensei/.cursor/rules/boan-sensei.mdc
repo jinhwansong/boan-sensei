@@ -22,6 +22,8 @@ pnpm build
 
 If the command is not available, ask the user how they want to expose the local CLI before continuing.
 
+For deeper domain-specific review, consult the top-level `skills/<name>/SKILL.md` drafts such as `skills/xss-review/SKILL.md` or `skills/token-auth-review/SKILL.md`. These drafts are guidance only and are not wired to a `--skill` CLI option.
+
 ## Command Order
 
 Run from the target project root:
@@ -52,6 +54,8 @@ boan-sensei report --mode purple
 
 Do not present scan results as confirmed security impact.
 
+Red mode does not perform real attacks, exploitation, bypassing, or penetration testing. It only summarizes review questions from an attacker's perspective based on local code signals.
+
 Use cautious wording:
 
 - Review candidate
@@ -63,4 +67,6 @@ Use cautious wording:
 - 검토 권장
 - 코드 신호 발견
 
-After generating a Markdown report, remind the user that they need to inspect and confirm the findings themselves.
+After generating a Markdown report, remind the user that they need to inspect and confirm the findings themselves. The report is supporting material for frontend security review.
+
+Do not create an MCP server for boan-sensei.
