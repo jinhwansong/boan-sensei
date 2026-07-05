@@ -65,6 +65,22 @@ scripts/install-plugin.sh cursor /path/to/project
 scripts/install-plugin.sh claude /path/to/skills-root
 ```
 
+Windows PowerShell:
+
+```powershell
+.\scripts\install-plugin.ps1 codex C:\path\to\codex-plugins
+.\scripts\install-plugin.ps1 cursor C:\path\to\project
+.\scripts\install-plugin.ps1 claude C:\path\to\skills-root
+```
+
+adapter 파일, 공통 skill 초안, plugin bundle은 역할이 다릅니다.
+
+- `adapters/`: 대상 프로젝트나 도구 설정에 복사하거나 병합하는 낮은 수준의 단일 지침 파일입니다.
+- `skills/`: boan-sensei 공통 보안 분석 스킬 초안입니다.
+- `plugins/`: Codex, Cursor, Claude Code가 기대하는 형태로 같은 워크플로우를 묶어 둔 도구별 bundle입니다.
+
+정확한 대상 위치와 도구별 차이는 `plugins/README.md`를 참고하세요.
+
 adapter가 실행할 로컬 CLI 엔진은 대상 저장소나 작업 공간에서 사용할 수 있어야 합니다. 개발 중에는 이 저장소에서 먼저 빌드합니다.
 
 ```bash
@@ -141,6 +157,33 @@ boan-sensei report --mode purple
 
 red mode는 실제 공격, 익스플로잇, 우회, 침투 테스트를 수행하지 않습니다. 로컬 코드 신호를 바탕으로 공격자 관점의 검토 질문만 정리합니다.
 
+## Skills
+
+boan-sensei는 CLI 기반 점검 도구이며, 향후 Claude Code, Cursor, Codex 같은 AI 코딩 에이전트에서 재사용할 수 있는 공통 보안 분석 스킬 초안도 함께 제공합니다.
+
+`plugins/` 아래의 도구별 plugin bundle은 이 초안을 Codex, Cursor, Claude Code 형식에 맞게 포장하거나 참조할 수 있습니다. 이 파일들은 새 CLI 동작이 아니며, CLI는 아직 `--skill` 옵션을 구현하지 않습니다.
+
+```text
+skills/
+  frontend-security-review/SKILL.md
+  token-auth-review/SKILL.md
+  xss-review/SKILL.md
+  external-content-review/SKILL.md
+  dependency-review/SKILL.md
+  report-writer/SKILL.md
+```
+
+스킬 초안의 범위는 다음과 같습니다.
+
+- 프론트엔드 전반의 보안 점검 후보
+- 인증 및 토큰 흐름 점검 후보
+- XSS 및 HTML 렌더링 점검 후보
+- iframe, embed, 외부 링크, `window.open`, `postMessage`, CSP 점검 후보
+- 프론트엔드 의존성 점검 후보
+- 수집된 findings를 바탕으로 한 신중한 Markdown 보고서 작성
+
+모든 스킬은 같은 안전 원칙을 따릅니다. 실제 취약점으로 단정하지 않고, 실제 공격이나 침투를 수행하지 않으며, 익스플로잇 또는 우회 절차를 자동화하지 않고, 사용자가 소유하거나 점검 권한이 있는 프로젝트를 전제로 합니다.
+
 ## 생성 파일
 
 - `.boan-sensei/findings.json`
@@ -183,7 +226,7 @@ adapter는 다음 내용을 안내합니다.
 
 MCP 서버, 자동 수정, 마켓플레이스형 플러그인 패키징은 현재 범위에 포함하지 않습니다.
 
-`plugins/codex-boan-sensei`는 skill-only Codex 플러그인 스캐폴드입니다. `plugins/cursor-boan-sensei`와 `plugins/claude-code-boan-sensei`는 Cursor와 Claude Code용 plugin-style bundle입니다. 이 번들은 MCP 서버를 추가하지 않습니다.
+`plugins/codex-boan-sensei`는 skill-only Codex 플러그인 스캐폴드입니다. `plugins/cursor-boan-sensei`는 Cursor rule을 프로젝트의 `.cursor/rules/` 형태로 담습니다. `plugins/claude-code-boan-sensei`는 Claude Code skill 폴더를 담습니다. 이 번들은 MCP 서버를 추가하지 않습니다.
 
 ## 예시
 
@@ -208,7 +251,8 @@ adapters           AI 코딩툴 사용 안내
 templates          향후 템플릿 예시
 docs               프로젝트 메모와 설계 문서
 examples           실행 및 복사 가능한 사용 예시
-plugins            Codex 플러그인 스캐폴드 실험
+plugins            Codex, Cursor, Claude Code용 도구별 plugin bundle
+skills             plugin bundle을 위한 공통 보안 분석 스킬 초안
 scripts            adapter 설치 스크립트
 ```
 
