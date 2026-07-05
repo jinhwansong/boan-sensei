@@ -9,7 +9,7 @@ dependency-review
 
 ## Purpose
 
-Collect frontend dependency review candidates from package manifests and lockfiles. `boan-sensei scan` now collects package presence and version strings for selected frontend dependencies, but it still does not check vulnerability databases. Until vulnerability database integration exists, only recommend version confirmation or update review.
+Collect frontend dependency review candidates from package manifests and lockfiles. `boan-sensei scan` now collects package presence and version strings for selected frontend dependencies, missing lockfile candidates, latest-version differences when the npm registry is reachable, and simple lockfile/package.json mismatch candidates. It still does not check vulnerability databases, so only recommend version confirmation or update review.
 
 ## When to use
 
@@ -20,7 +20,7 @@ Use this skill when a user asks about frontend package risk, dependency versions
 - `package.json`.
 - Lockfiles such as `pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock`.
 - Workspace package manifests.
-- Existing `.boan-sensei/findings.json` when available. Current scan output can include selected `package.json` dependency versions and missing-lockfile review candidates.
+- Existing `.boan-sensei/findings.json` when available. Current scan output can include selected `package.json` dependency versions, missing-lockfile review candidates, registry latest-version differences, and simple lockfile mismatch candidates.
 
 ## Review scope
 
@@ -28,7 +28,7 @@ Use this skill when a user asks about frontend package risk, dependency versions
 - Lockfile presence.
 - Security-sensitive library versions.
 - Major packages such as `axios`, `dompurify`, `js-cookie`, `vite`, `next`, and `react`.
-- Current automated scan coverage: existence and version string collection for the selected packages, plus missing lockfile detection.
+- Current automated scan coverage: existence and version string collection for the selected packages, missing lockfile detection, latest-version difference checks when registry access succeeds, and simple lockfile/package.json mismatch checks.
 - Out of current automated scope: vulnerability database lookup, package advisory correlation, and confirmed vulnerable version decisions.
 
 ## Output format

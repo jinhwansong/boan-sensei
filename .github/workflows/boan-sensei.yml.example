@@ -1,0 +1,39 @@
+name: boan-sensei
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build boan-sensei
+        run: pnpm build
+
+      - name: Run boan-sensei scan
+        run: pnpm --filter boan-sensei exec boan-sensei scan --mode blue --diff
+
+      - name: Fail on high review candidates
+        shell: bash
+        run: |
+          node -e "const f=require('./.boan-sensei/findings.json'); const high=f.findings.filter((item)=>item.risk==='high'); if (high.length) { console.error(`High review candidates: ${high.length}`); process.exit(1); }"
+
+      # TODO: Add optional PR comment publishing after the review workflow and wording policy are finalized.

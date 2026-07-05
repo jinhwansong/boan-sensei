@@ -31,6 +31,7 @@ Use this skill when a user asks about iframes, embeds, external links, `window.o
 - `window.open`.
 - `postMessage`.
 - CSP `frame-src` confirmation.
+- Static scans should not confirm CSP absence; treat only code-level CSP strings and policy references as review signals.
 
 ## Output format
 

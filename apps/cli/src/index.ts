@@ -18,7 +18,7 @@ try {
   const mode = resolveMode(getOptionValue("--mode"));
 
   if (command === "scan") {
-    const findings = await scanProject(process.cwd(), { write: true, mode });
+    const findings = await scanProject(process.cwd(), { write: true, mode, diff: hasOption("--diff") });
     console.log(
       `boan-sensei: ${mode} mode로 점검 후보 ${findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`
     );
@@ -68,7 +68,11 @@ function printHelp() {
   console.log(`boan-sensei v0.1
 
 Usage:
-  boan-sensei scan [--mode basic|blue|red|purple]
+  boan-sensei scan [--mode basic|blue|red|purple] [--diff]
   boan-sensei report [--mode basic|blue|red|purple]
   boan-sensei todo`);
+}
+
+function hasOption(name: string): boolean {
+  return process.argv.includes(name);
 }

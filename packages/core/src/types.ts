@@ -31,6 +31,8 @@ export interface FindingsFile {
 export interface ScanProjectOptions {
   write?: boolean;
   mode?: BoanMode;
+  diff?: boolean;
+  registryFetch?: typeof fetch;
 }
 
 export interface ReportOptions {
