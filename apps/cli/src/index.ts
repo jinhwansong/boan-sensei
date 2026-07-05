@@ -2,7 +2,7 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { generateReport, generateTodo, scanProject, type FindingsFile } from "@boan-sensei/core";
+import { generateReport, generateTodo, getSenseiComment, scanProject, type FindingsFile } from "@boan-sensei/core";
 
 const command = process.argv[2];
 
@@ -10,6 +10,7 @@ try {
   if (command === "scan") {
     const findings = await scanProject(process.cwd(), { write: true });
     console.log(`boan-sensei: 점검 후보 ${findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`);
+    console.log(`보안선생 한마디: ${getSenseiComment(findings)}`);
   } else if (command === "report") {
     const findingsFile = await readFindingsFile();
     const markdown = generateReport(findingsFile.findings, { projectRoot: findingsFile.projectRoot });
