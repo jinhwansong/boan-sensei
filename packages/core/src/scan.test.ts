@@ -316,6 +316,51 @@ describe("scanProject", () => {
     expect(findings[0].message).toContain("검토를 권장합니다");
   });
 
+  test("collects CSP candidates from framework header configuration files", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "next.config.js",
+      [
+        "export default {",
+        "  async headers() {",
+        "    return [{",
+        "      source: '/(.*)',",
+        "      headers: [{ key: 'Content-Security-Policy', value: \"script-src 'self' 'unsafe-eval'\" }]",
+        "    }];",
+        "  }",
+        "};"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      category: "csp",
+      risk: "medium",
+      title: "CSP unsafe directive 확인 필요",
+      evidence: {
+        filePath: "next.config.js",
+        lineNumber: 5
+      }
+    });
+  });
+
+  test("does not report missing static HTML CSP when framework header configuration exists", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "index.html", "<html><head></head><body></body></html>\n");
+    await writeProjectFile(
+      root,
+      "next.config.mjs",
+      "export default { async headers() { return [{ headers: [{ key: 'Content-Security-Policy', value: \"default-src 'self'\" }] }]; } };\n"
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(0);
+  });
+
   test("honors .boan-senseiignore file and directory patterns", async () => {
     const root = await makeProject();
     await writeProjectFile(root, ".boan-senseiignore", ["src/generated/", "*.test.ts"].join("\n"));
@@ -412,6 +457,103 @@ describe("scanProject", () => {
       "axios 버전 확인 필요",
       "axios lockfile 버전 확인 필요"
     ]);
+  });
+
+  test("reads pnpm lockfile package versions from lockfile structure", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "package.json", JSON.stringify({ dependencies: { axios: "1.6.0" } }));
+    await writeProjectFile(
+      root,
+      "pnpm-lock.yaml",
+      [
+        "lockfileVersion: '9.0'",
+        "",
+        "packages:",
+        "",
+        "  axios@1.5.0:",
+        "    resolution: {integrity: sha512-test}"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root, { registryFetch: registryLatest() });
+
+    expect(findings.map((finding) => finding.title)).toEqual([
+      "axios 버전 확인 필요",
+      "axios lockfile 버전 확인 필요"
+    ]);
+    expect(findings[1].evidence.filePath).toBe("pnpm-lock.yaml");
+  });
+
+  test("reads yarn lockfile package versions from quoted package keys", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "package.json", JSON.stringify({ dependencies: { react: "18.3.0" } }));
+    await writeProjectFile(
+      root,
+      "yarn.lock",
+      [
+        "\"react@^18.3.0\":",
+        "  version \"18.2.0\"",
+        "  resolved \"https://registry.yarnpkg.com/react/-/react-18.2.0.tgz\""
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root, { registryFetch: registryLatest() });
+
+    expect(findings.map((finding) => finding.title)).toEqual([
+      "react 버전 확인 필요",
+      "react lockfile 버전 확인 필요"
+    ]);
+    expect(findings[1].evidence.filePath).toBe("yarn.lock");
+  });
+
+  test("flags file upload wrapper component usage when accept prop is omitted", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/Upload.tsx",
+      [
+        "type Props = { accept?: string };",
+        "function FileUpload({ accept }: Props) {",
+        "  return <input type=\"file\" accept={accept} />;",
+        "}",
+        "export function Form() {",
+        "  return <FileUpload />;",
+        "}"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      category: "file-upload",
+      status: "low_confidence",
+      title: "파일 업로드 accept prop 확인 필요",
+      evidence: {
+        filePath: "src/Upload.tsx",
+        lineNumber: 6
+      }
+    });
+  });
+
+  test("does not flag file upload wrapper component usage when accept prop is provided", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/Upload.tsx",
+      [
+        "function FileUpload({ accept }: { accept?: string }) {",
+        "  return <input type=\"file\" accept={accept} />;",
+        "}",
+        "export function Form() {",
+        "  return <FileUpload accept=\"image/*\" />;",
+        "}"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(0);
   });
 
   test("does not treat semver ranges as lockfile mismatches when a resolved version is present", async () => {
