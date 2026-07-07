@@ -167,6 +167,28 @@ describe("scanProject", () => {
     });
   });
 
+  test("does not treat sanitize words in comments as sanitization evidence", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/html.tsx",
+      [
+        "const userHtml = props.html;",
+        "// sanitize userHtml before rendering later",
+        "<div dangerouslySetInnerHTML={{ __html: userHtml }} />"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      category: "html-injection",
+      risk: "medium",
+      status: "needs_review"
+    });
+  });
+
   test("collects dependency review candidates from package.json and missing lockfile", async () => {
     const root = await makeProject();
     await writeProjectFile(root, "package.json", JSON.stringify({

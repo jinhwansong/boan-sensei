@@ -880,7 +880,7 @@ function hasLiteralDangerousHtmlValue(line: string): boolean {
 function hasNearbySanitizeSignal(line: string, lines: string[], lineIndex: number): boolean {
   const htmlValue = getDangerousHtmlIdentifier(line);
   const start = Math.max(0, lineIndex - 10);
-  const nearbyLines = lines.slice(start, lineIndex + 1);
+  const nearbyLines = lines.slice(start, lineIndex + 1).map(getScannableLine);
   return nearbyLines.some((nearbyLine) => {
     if (!/\b(?:DOMPurify|sanitize|purify)\b/i.test(nearbyLine)) {
       return false;
