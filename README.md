@@ -247,6 +247,7 @@ MCP servers, automatic fixes, and full marketplace-style plugin packaging are ou
 
 - `examples/frontend-sample`: a tiny frontend project you can use to try `scan`, `report`, and `todo`.
 - `examples/adapter-install`: a copy guide for placing adapter files into another project.
+- `.github/workflows/boan-sensei-example.yml`: an example PR comment workflow; see `docs/github-actions-example.md`.
 
 ## Development
 
