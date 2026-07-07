@@ -58,7 +58,7 @@ export const DOM_RULES: ScanRule[] = [
     message: "External content object candidate. Verify source allowlist and embedding policy."
   },
   {
-    keyword: "target=\"_blank\"",
+    pattern: /\btarget\s*=\s*(?:"_blank"|'_blank'|\{\s*["_']_blank["_']\s*\})/i,
     category: "navigation",
     risk: "low",
     title: "target=\"_blank\" 링크 확인 필요",

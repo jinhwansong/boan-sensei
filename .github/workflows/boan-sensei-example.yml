@@ -43,10 +43,12 @@ jobs:
         run: pnpm build
 
       - name: Scan changed frontend files
-        run: pnpm --filter boan-sensei exec boan-sensei scan --mode basic --diff
+        # Run from the repository root so .boan-sensei/findings.json is created at the same root.
+        run: node apps/cli/dist/index.js scan --mode basic --diff
 
       - name: Generate PR comment body
-        run: pnpm --filter boan-sensei exec boan-sensei pr-comment
+        # Creates .boan-sensei/pr-comment.md at the repository root.
+        run: node apps/cli/dist/index.js pr-comment
 
       - name: Comment review candidates on PR
         if: github.event_name == 'pull_request'

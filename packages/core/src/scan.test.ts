@@ -56,9 +56,12 @@ describe("scanProject", () => {
     ]);
     expect(findings[0]).toMatchObject({
       id: "BS-0001",
+      ruleId: "browser-storage.local-storage",
+      confidence: "medium",
       category: "browser-storage",
       risk: "medium",
       status: "needs_review",
+      recommendation: expect.stringContaining("storage"),
       evidence: {
         filePath: "src/App.tsx",
         lineNumber: 1,
@@ -67,13 +70,28 @@ describe("scanProject", () => {
     });
   });
 
-  test("ignores excluded directories, files outside src, and unsupported extensions", async () => {
+  test("collects findings from common frontend roots when they exist", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "app/page.tsx", "localStorage.getItem('token');\n");
+    await writeProjectFile(root, "pages/index.tsx", "console.warn(authToken);\n");
+    await writeProjectFile(root, "components/Card.tsx", "window.open('/help');\n");
+
+    const findings = await scanProject(root);
+
+    expect(findings.map((finding) => finding.evidence.filePath)).toEqual([
+      "app/page.tsx",
+      "components/Card.tsx",
+      "pages/index.tsx"
+    ]);
+  });
+
+  test("ignores excluded directories, unsupported extensions, and non-default roots", async () => {
     const root = await makeProject();
     await writeProjectFile(root, "src/keep.ts", "window.open('/help');\n");
     await writeProjectFile(root, "src/readme.md", "localStorage\n");
     await writeProjectFile(root, "node_modules/pkg/index.ts", "localStorage\n");
     await writeProjectFile(root, "build/bundle.ts", "document.cookie\n");
-    await writeProjectFile(root, "pages/index.tsx", "dangerouslySetInnerHTML\n");
+    await writeProjectFile(root, "features/index.tsx", "dangerouslySetInnerHTML\n");
 
     const findings = await scanProject(root);
 
@@ -161,7 +179,8 @@ describe("scanProject", () => {
       }
     }));
 
-    const findings = await scanProject(root, { registryFetch: registryLatest() });
+    const fetchSpy = registryLatest();
+    const findings = await scanProject(root, { registryFetch: fetchSpy });
 
     expect(findings.map((finding) => finding.title)).toEqual([
       "axios 버전 확인 필요",
@@ -178,6 +197,23 @@ describe("scanProject", () => {
       linePreview: "dependencies.axios: ^1.7.0"
     });
     expect(findings[3].message).toContain("lockfile");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("collects registry latest-version candidates only when latest checks are enabled", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "package.json", JSON.stringify({ dependencies: { axios: "1.6.0" } }));
+    await writeProjectFile(root, "package-lock.json", JSON.stringify({
+      packages: {
+        "node_modules/axios": { version: "1.6.0" }
+      }
+    }));
+    const fetchSpy = registryLatest({ axios: "1.7.0" });
+
+    const findings = await scanProject(root, { registryFetch: fetchSpy, checkLatest: true });
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(findings.map((finding) => finding.title)).toContain("axios 최신 버전 확인 필요");
   });
 
   test("detects expanded rule candidates with review-oriented risk levels", async () => {
@@ -419,7 +455,7 @@ describe("scanProject", () => {
       }
     }));
 
-    const findings = await scanProject(root, { registryFetch: registryLatest({ axios: "1.7.0" }) });
+    const findings = await scanProject(root, { registryFetch: registryLatest({ axios: "1.7.0" }), checkLatest: true });
 
     expect(findings.map((finding) => finding.title)).toContain("axios 최신 버전 확인 필요");
     expect(findings.find((finding) => finding.title === "axios 최신 버전 확인 필요")?.message).toContain("취약점 판단이 아니라");
@@ -438,7 +474,7 @@ describe("scanProject", () => {
       throw new Error("offline");
     }) as unknown as typeof fetch;
 
-    const findings = await scanProject(root, { registryFetch: failingFetch });
+    const findings = await scanProject(root, { registryFetch: failingFetch, checkLatest: true });
 
     expect(findings.map((finding) => finding.title)).toEqual(["axios 버전 확인 필요"]);
   });
@@ -452,7 +488,7 @@ describe("scanProject", () => {
       }
     }));
 
-    const findings = await scanProject(root, { registryFetch: registryLatest() });
+    const findings = await scanProject(root, { registryFetch: registryLatest(), checkLatest: true });
 
     expect(findings.map((finding) => finding.title)).toEqual([
       "axios 버전 확인 필요",
@@ -476,7 +512,7 @@ describe("scanProject", () => {
       ].join("\n")
     );
 
-    const findings = await scanProject(root, { registryFetch: registryLatest() });
+    const findings = await scanProject(root, { registryFetch: registryLatest(), checkLatest: true });
 
     expect(findings.map((finding) => finding.title)).toEqual([
       "axios 버전 확인 필요",
@@ -498,7 +534,7 @@ describe("scanProject", () => {
       ].join("\n")
     );
 
-    const findings = await scanProject(root, { registryFetch: registryLatest() });
+    const findings = await scanProject(root, { registryFetch: registryLatest(), checkLatest: true });
 
     expect(findings.map((finding) => finding.title)).toEqual([
       "react 버전 확인 필요",
@@ -566,7 +602,7 @@ describe("scanProject", () => {
       }
     }));
 
-    const findings = await scanProject(root, { registryFetch: registryLatest() });
+    const findings = await scanProject(root, { registryFetch: registryLatest(), checkLatest: true });
 
     expect(findings.map((finding) => finding.title)).toEqual(["axios 버전 확인 필요"]);
   });
@@ -578,6 +614,7 @@ describe("scanProject", () => {
     await scanProject(root, { write: true });
 
     const stored = JSON.parse(await readFile(join(root, ".boan-sensei", "findings.json"), "utf8"));
+    expect(stored.schemaVersion).toBe(2);
     expect(stored.mode).toBe("basic");
     expect(stored.findings).toHaveLength(1);
     expect(stored.findings[0].title).toBe("VITE_ 공개 환경 변수 확인 필요");

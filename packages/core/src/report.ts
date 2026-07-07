@@ -65,6 +65,9 @@ export function generateTodo(findings: Finding[]): string {
 
   for (const finding of findings) {
     lines.push(`- [ ] ${finding.id} ${finding.title}`);
+    lines.push(`  - ruleId: \`${finding.ruleId}\``);
+    lines.push(`  - confidence: ${finding.confidence}`);
+    lines.push(`  - recommendation: ${finding.recommendation}`);
     lines.push(`  - 위치: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``);
     lines.push(`  - 확인: ${finding.message}`);
     lines.push(`  - 상태: ${finding.status}`);
@@ -98,9 +101,12 @@ export function generatePrComment(findings: Finding[]): string {
 
   for (const finding of findings.slice(0, 20)) {
     lines.push(`- ${finding.id} ${finding.title}`);
+    lines.push(`  - Rule: ${finding.ruleId}`);
+    lines.push(`  - Confidence: ${finding.confidence}`);
     lines.push(`  - Risk: ${finding.risk}`);
     lines.push(`  - Location: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``);
     lines.push(`  - Check: ${finding.message}`);
+    lines.push(`  - Recommendation: ${finding.recommendation}`);
   }
 
   if (findings.length > 20) {

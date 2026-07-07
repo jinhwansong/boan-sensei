@@ -11,7 +11,7 @@
 ## boan-sensei가 하는 일
 
 - AI 코딩툴에 반복 가능한 프론트엔드 보안 점검 흐름을 제공합니다.
-- `src` 아래의 프론트엔드 파일을 검사합니다.
+- 존재하는 `src`, `app`, `pages`, `components` 아래의 프론트엔드 파일을 검사합니다.
 - 브라우저 저장소, 공개 환경 변수, iframe, cross-window messaging, 디버그 출력 같은 키워드 기반 코드 신호를 수집합니다.
 - `.boan-sensei/findings.json`에 구조화된 결과를 저장합니다.
 - mode별 Markdown 보고서를 생성합니다.
@@ -44,9 +44,9 @@
 설치 스크립트도 사용할 수 있습니다.
 
 ```bash
-scripts/install-adapter.sh codex /path/to/project
-scripts/install-adapter.sh cursor /path/to/project
-scripts/install-adapter.sh claude /path/to/skills-root
+sh scripts/install-adapter.sh codex /path/to/project
+sh scripts/install-adapter.sh cursor /path/to/project
+sh scripts/install-adapter.sh claude /path/to/skills-root
 ```
 
 Windows PowerShell:
@@ -60,9 +60,9 @@ Windows PowerShell:
 도구별 plugin bundle을 설치하려면 다음 스크립트를 사용할 수 있습니다.
 
 ```bash
-scripts/install-plugin.sh codex /path/to/codex-plugins
-scripts/install-plugin.sh cursor /path/to/project
-scripts/install-plugin.sh claude /path/to/skills-root
+sh scripts/install-plugin.sh codex /path/to/codex-plugins
+sh scripts/install-plugin.sh cursor /path/to/project
+sh scripts/install-plugin.sh claude /path/to/skills-root
 ```
 
 Windows PowerShell:
@@ -145,12 +145,13 @@ boan-sensei report --mode purple
 
 ## 명령어
 
-### `boan-sensei scan [--mode basic|blue|red|purple] [--diff]`
+### `boan-sensei scan [--mode basic|blue|red|purple] [--diff] [--check-latest|--online]`
 
 현재 작업 디렉터리를 기준으로 검사하고 `.boan-sensei/findings.json`을 생성합니다.
 `--diff`를 사용하면 `git diff --name-only`의 변경된 지원 파일만 검사하며, Git을 사용할 수 없으면 일반 전체 검사로 돌아갑니다.
+기본 `scan`은 네트워크 호출 없는 로컬 정적 분석으로 동작합니다. npm registry 최신 버전 비교 후보가 필요할 때만 `--check-latest` 또는 `--online`을 명시하세요.
 
-검사 대상 확장자:
+검사 대상은 존재하는 `src`, `app`, `pages`, `components` 디렉터리 아래의 다음 확장자입니다:
 
 - `.js`
 - `.jsx`
@@ -169,7 +170,7 @@ boan-sensei report --mode purple
 
 프로젝트 루트의 `.boan-senseiignore`에 `dist/`, `src/generated/`, `*.test.ts` 같은 추가 제외 파일이나 디렉터리를 적을 수 있습니다.
 
-### `boan-sensei review [--mode basic|blue|red|purple] [--diff]`
+### `boan-sensei review [--mode basic|blue|red|purple] [--diff] [--check-latest|--online]`
 
 adapter-friendly 단일 진입점으로 `scan`, `report`, `todo`를 순서대로 실행하며, 동일하게 조심스러운 점검 후보 출력을 유지합니다.
 

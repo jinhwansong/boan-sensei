@@ -9,6 +9,7 @@ import { SCAN_RULES, type ScanRule } from "./rules.js";
 import type { BoanMode, Finding, FindingsFile, ScanProjectOptions } from "./types.js";
 
 const execFileAsync = promisify(execFile);
+const DEFAULT_SCAN_DIRS = ["src", "app", "pages", "components"];
 const EXCLUDED_DIRS = new Set(["node_modules", "dist", "build", ".next", ".git", "coverage"]);
 const SUPPORTED_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".vue"]);
 const DIFF_SUPPORTED_EXTENSIONS = new Set([...SUPPORTED_EXTENSIONS, ".html"]);
@@ -27,25 +28,30 @@ const CSP_FRAMEWORK_FILES = [
 ];
 type RegistryFetch = NonNullable<ScanProjectOptions["registryFetch"]>;
 type LockfileVersion = { version: string; filePath: string };
+type FindingCandidate = Omit<Finding, "ruleId" | "confidence" | "recommendation"> &
+  Partial<Pick<Finding, "ruleId" | "confidence" | "recommendation">>;
 
 export async function scanProject(projectRoot = process.cwd(), options: ScanProjectOptions = {}): Promise<Finding[]> {
   const root = resolve(projectRoot);
   const mode = options.mode ?? DEFAULT_MODE;
-  const srcRoot = resolve(root, "src");
   const ignorePatterns = await readIgnorePatterns(root);
-  const files = await collectScanFiles(root, srcRoot, ignorePatterns, Boolean(options.diff));
+  const scanRoots = await collectDefaultScanRoots(root, ignorePatterns);
+  const files = await collectScanFiles(root, scanRoots, ignorePatterns, Boolean(options.diff));
   const findings: Finding[] = [];
 
   for (const filePath of files.sort()) {
     const contents = await readFile(filePath, "utf8");
     const lines = contents.split(/\r?\n/);
     const sourceFile = createSourceFile(filePath, contents);
+    let inBlockComment = false;
 
-    lines.forEach((line, index) => {
-      if (shouldSkipLine(line)) {
-        return;
+    for (const [index, line] of lines.entries()) {
+      const commentState = getLineCommentState(line, inBlockComment);
+      inBlockComment = commentState.inBlockComment;
+      if (!commentState.scannable) {
+        continue;
       }
-      const scannableLine = getScannableLine(line);
+      const scannableLine = getScannableLine(commentState.scannable);
       const lineStart = sourceFile?.getPositionOfLineAndCharacter(index, 0) ?? 0;
 
       for (const rule of SCAN_RULES) {
@@ -55,11 +61,14 @@ export async function scanProject(projectRoot = process.cwd(), options: ScanProj
         if (rule.keyword && !isKeywordCodeSignal(sourceFile, scannableLine, lineStart, rule.keyword)) {
           continue;
         }
+        if (shouldSkipStringOnlyMatch(sourceFile, scannableLine, rule)) {
+          continue;
+        }
         if (shouldSkipRuleMatch(scannableLine, rule)) {
           continue;
         }
 
-        findings.push({
+        findings.push(completeFinding({
           id: formatFindingId(findings.length + 1),
           category: rule.category,
           risk: getFindingRisk(scannableLine, rule, lines, index),
@@ -71,15 +80,20 @@ export async function scanProject(projectRoot = process.cwd(), options: ScanProj
             lineNumber: index + 1,
             linePreview: line.trim()
           }
-        });
+        }, rule));
       }
-    });
+    }
 
     findings.push(...collectFileUploadFindings(root, filePath, contents, findings.length));
     applyFileCorrelations(findings, toPortablePath(relative(root, filePath)), contents);
   }
 
-  findings.push(...(await collectDependencyFindings(root, findings.length, ignorePatterns, options.registryFetch)));
+  findings.push(...(await collectDependencyFindings(
+    root,
+    findings.length,
+    ignorePatterns,
+    options.checkLatest ? options.registryFetch ?? globalThis.fetch : undefined
+  )));
   findings.push(...(await collectCspFindings(root, findings.length, ignorePatterns)));
 
   if (options.write) {
@@ -93,7 +107,7 @@ async function collectDependencyFindings(
   root: string,
   offset: number,
   ignorePatterns: string[],
-  registryFetch = globalThis.fetch
+  registryFetch?: RegistryFetch
 ): Promise<Finding[]> {
   if (isIgnoredPath("package.json", ignorePatterns)) {
     return [];
@@ -130,7 +144,7 @@ async function collectDependencyFindings(
         continue;
       }
 
-      findings.push({
+      findings.push(completeFinding({
         id: formatFindingId(offset + findings.length + 1),
         category: "dependency",
         risk: "low",
@@ -142,11 +156,11 @@ async function collectDependencyFindings(
           lineNumber: 1,
           linePreview: `${sectionName}.${packageName}: ${version}`
         }
-      });
+      }));
 
       const latestVersion = await fetchLatestPackageVersion(packageName, registryFetch);
       if (latestVersion && normalizeVersion(version) !== normalizeVersion(latestVersion)) {
-        findings.push({
+        findings.push(completeFinding({
           id: formatFindingId(offset + findings.length + 1),
           category: "dependency",
           risk: "low",
@@ -158,12 +172,12 @@ async function collectDependencyFindings(
             lineNumber: 1,
             linePreview: `${sectionName}.${packageName}: ${version} latest ${latestVersion}`
           }
-        });
+        }));
       }
 
       const lockfileVersion = lockfileVersions.get(packageName);
       if (lockfileVersion && shouldCompareLockfileVersion(version) && normalizeVersion(version) !== normalizeVersion(lockfileVersion.version)) {
-        findings.push({
+        findings.push(completeFinding({
           id: formatFindingId(offset + findings.length + 1),
           category: "dependency",
           risk: "low",
@@ -175,13 +189,13 @@ async function collectDependencyFindings(
             lineNumber: 1,
             linePreview: `${packageName}: package.json ${version}, lockfile ${lockfileVersion.version}`
           }
-        });
+        }));
       }
     }
   }
 
   if (!(await hasAnyLockfile(root, ignorePatterns))) {
-    findings.push({
+    findings.push(completeFinding({
       id: formatFindingId(offset + findings.length + 1),
       category: "dependency",
       risk: "low",
@@ -193,7 +207,7 @@ async function collectDependencyFindings(
         lineNumber: 1,
         linePreview: "package-lock.json, pnpm-lock.yaml, yarn.lock not found"
       }
-    });
+    }));
   }
 
   return findings;
@@ -212,7 +226,7 @@ async function collectCspFindings(root: string, offset: number, ignorePatterns: 
     const cspIndex = contents.search(/Content-Security-Policy/i);
 
     if (cspIndex === -1 && !hasFrameworkCsp) {
-      findings.push({
+      findings.push(completeFinding({
         id: formatFindingId(offset + findings.length + 1),
         category: "csp",
         risk: "low",
@@ -224,13 +238,13 @@ async function collectCspFindings(root: string, offset: number, ignorePatterns: 
           lineNumber: 1,
           linePreview: "Content-Security-Policy not found in static HTML"
         }
-      });
+      }));
       continue;
     }
 
     const unsafeMatch = contents.match(/'unsafe-(?:inline|eval)'/i);
     if (unsafeMatch?.index !== undefined) {
-      findings.push({
+      findings.push(completeFinding({
         id: formatFindingId(offset + findings.length + 1),
         category: "csp",
         risk: "medium",
@@ -242,7 +256,7 @@ async function collectCspFindings(root: string, offset: number, ignorePatterns: 
           lineNumber: getLineNumber(contents, unsafeMatch.index),
           linePreview: getLinePreview(contents, unsafeMatch.index)
         }
-      });
+      }));
     }
   }
 
@@ -275,7 +289,7 @@ async function collectCspPolicyFindings(
       continue;
     }
 
-    findings.push({
+    findings.push(completeFinding({
       id: formatFindingId(offset + findings.length + 1),
       category: "csp",
       risk: "medium",
@@ -287,7 +301,7 @@ async function collectCspPolicyFindings(
         lineNumber: getLineNumber(contents, unsafeMatch.index),
         linePreview: getLinePreview(contents, unsafeMatch.index)
       }
-    });
+    }));
   }
 
   return { hasCsp, findings };
@@ -499,6 +513,61 @@ async function fetchLatestPackageVersion(packageName: string, registryFetch?: Re
   }
 }
 
+function completeFinding(finding: FindingCandidate, rule?: ScanRule): Finding {
+  return {
+    ...finding,
+    ruleId: finding.ruleId ?? rule?.ruleId ?? getDefaultRuleId(finding, rule),
+    confidence: finding.confidence ?? rule?.confidence ?? getDefaultConfidence(finding),
+    recommendation: finding.recommendation ?? rule?.recommendation ?? getDefaultRecommendation(finding)
+  };
+}
+
+function getDefaultRuleId(finding: FindingCandidate, rule?: ScanRule): string {
+  if (rule?.keyword === "localStorage") {
+    return "browser-storage.local-storage";
+  }
+  if (rule?.keyword === "sessionStorage") {
+    return "browser-storage.session-storage";
+  }
+  if (rule?.keyword === "dangerouslySetInnerHTML") {
+    return "html-injection.dangerously-set-inner-html";
+  }
+  const titleSlug = finding.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return titleSlug ? `${finding.category}.${titleSlug}` : `${finding.category}.review-candidate`;
+}
+
+function getDefaultConfidence(finding: FindingCandidate): Finding["confidence"] {
+  if (finding.status === "low_confidence") {
+    return "low";
+  }
+  if (finding.risk === "high") {
+    return "high";
+  }
+  return "medium";
+}
+
+function getDefaultRecommendation(finding: FindingCandidate): string {
+  if (finding.category === "dependency") {
+    return "Verify the package version and lockfile state; consider an update when it fits the project constraints.";
+  }
+  if (finding.category === "secret") {
+    return "Verify whether the value is an actual secret and move it to managed configuration if needed.";
+  }
+  if (finding.category === "browser-storage") {
+    return "Verify whether browser storage contains authentication, token, or personal data and whether a safer storage flow is needed.";
+  }
+  if (finding.category === "navigation") {
+    return "Verify whether new-window links include noopener and noreferrer where appropriate.";
+  }
+  if (finding.category === "html-injection") {
+    return "Verify the HTML input source and sanitization path.";
+  }
+  return "Review this code signal in project context and decide whether a change is recommended.";
+}
+
 function normalizeVersion(version: string): string {
   return version.replace(/^[~^<>=\s]+/, "").trim();
 }
@@ -510,6 +579,44 @@ function shouldCompareLockfileVersion(version: string): boolean {
 function shouldSkipLine(line: string): boolean {
   const trimmed = line.trim();
   return trimmed.startsWith("//") || /^\/\*.*\*\/$/.test(trimmed);
+}
+
+function getLineCommentState(line: string, inBlockComment: boolean): { scannable: string; inBlockComment: boolean } {
+  let remaining = line;
+  let stillInBlockComment = inBlockComment;
+  let scannable = "";
+
+  while (remaining.length > 0) {
+    if (stillInBlockComment) {
+      const endIndex = remaining.indexOf("*/");
+      if (endIndex === -1) {
+        return { scannable, inBlockComment: true };
+      }
+      remaining = remaining.slice(endIndex + 2);
+      stillInBlockComment = false;
+      continue;
+    }
+
+    const blockStart = remaining.indexOf("/*");
+    if (blockStart === -1) {
+      scannable += remaining;
+      break;
+    }
+
+    scannable += remaining.slice(0, blockStart);
+    const blockEnd = remaining.indexOf("*/", blockStart + 2);
+    if (blockEnd === -1) {
+      stillInBlockComment = true;
+      break;
+    }
+    remaining = remaining.slice(blockEnd + 2);
+  }
+
+  if (shouldSkipLine(scannable)) {
+    return { scannable: "", inBlockComment: stillInBlockComment };
+  }
+
+  return { scannable, inBlockComment: stillInBlockComment };
 }
 
 function getScannableLine(line: string): string {
@@ -719,6 +826,16 @@ function shouldSkipRuleMatch(line: string, rule: ScanRule): boolean {
   return isTargetBlankRule(rule) && hasNoopenerAndNoreferrer(line);
 }
 
+function shouldSkipStringOnlyMatch(sourceFile: ts.SourceFile | undefined, line: string, rule: ScanRule): boolean {
+  if (sourceFile || !rule.keyword || rule.keyword.includes("\"") || isTargetBlankRule(rule)) {
+    return false;
+  }
+  if (looksLikeFunctionCall(line, rule.keyword)) {
+    return false;
+  }
+  return !stripStringLiteralContents(line).includes(rule.keyword);
+}
+
 function isPublicEnvRule(rule: ScanRule): boolean {
   return rule.category === "public-env";
 }
@@ -736,7 +853,7 @@ function isDangerouslySetInnerHtmlRule(rule: ScanRule): boolean {
 }
 
 function isTargetBlankRule(rule: ScanRule): boolean {
-  return rule.category === "navigation" && rule.keyword === "target=\"_blank\"";
+  return rule.category === "navigation" && rule.title.includes("target=");
 }
 
 function hasSensitivePublicEnvName(line: string): boolean {
@@ -893,7 +1010,7 @@ function collectFileUploadFindings(root: string, filePath: string, contents: str
       continue;
     }
 
-    findings.push({
+    findings.push(completeFinding({
       id: formatFindingId(offset + findings.length + 1),
       category: "file-upload",
       risk: "low",
@@ -905,7 +1022,7 @@ function collectFileUploadFindings(root: string, filePath: string, contents: str
         lineNumber: getLineNumber(contents, match.index),
         linePreview: getLinePreview(contents, match.index)
       }
-    });
+    }));
   }
 
   findings.push(...collectFileUploadWrapperFindings(root, filePath, contents, offset + findings.length));
@@ -935,7 +1052,7 @@ function collectFileUploadWrapperFindings(root: string, filePath: string, conten
         continue;
       }
 
-      findings.push({
+      findings.push(completeFinding({
         id: formatFindingId(offset + findings.length + 1),
         category: "file-upload",
         risk: "low",
@@ -947,7 +1064,7 @@ function collectFileUploadWrapperFindings(root: string, filePath: string, conten
           lineNumber: getLineNumber(contents, usage.index),
           linePreview: getLinePreview(contents, usage.index)
         }
-      });
+      }));
     }
   }
 
@@ -976,7 +1093,7 @@ export async function writeFindingsFile(
 ): Promise<FindingsFile> {
   const mode = resolveMode(modeInput);
   const output: FindingsFile = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     projectRoot: resolve(projectRoot),
     mode,
@@ -1012,9 +1129,31 @@ export async function writeFindingsFile(
   return output;
 }
 
-async function collectScanFiles(root: string, srcRoot: string, ignorePatterns: string[], diffOnly: boolean): Promise<string[]> {
+async function collectDefaultScanRoots(root: string, ignorePatterns: string[]): Promise<string[]> {
+  const roots: string[] = [];
+
+  for (const dirName of DEFAULT_SCAN_DIRS) {
+    if (isIgnoredPath(dirName, ignorePatterns)) {
+      continue;
+    }
+    try {
+      await access(resolve(root, dirName));
+      roots.push(resolve(root, dirName));
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOENT") {
+        throw error;
+      }
+    }
+  }
+
+  return roots;
+}
+
+async function collectScanFiles(root: string, scanRoots: string[], ignorePatterns: string[], diffOnly: boolean): Promise<string[]> {
   if (!diffOnly) {
-    return collectFiles(root, srcRoot, ignorePatterns);
+    const files = await Promise.all(scanRoots.map((scanRoot) => collectFiles(root, scanRoot, ignorePatterns)));
+    return files.flat();
   }
 
   try {
@@ -1030,7 +1169,8 @@ async function collectScanFiles(root: string, srcRoot: string, ignorePatterns: s
     return files;
   } catch {
     console.warn("boan-sensei: git diff 파일 목록을 확인할 수 없어 전체 스캔으로 fallback합니다.");
-    return collectFiles(root, srcRoot, ignorePatterns);
+    const fallbackFiles = await Promise.all(scanRoots.map((scanRoot) => collectFiles(root, scanRoot, ignorePatterns)));
+    return fallbackFiles.flat();
   }
 }
 

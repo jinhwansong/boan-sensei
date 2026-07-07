@@ -14,9 +14,12 @@ const roots: string[] = [];
 
 const sampleFinding: Finding = {
   id: "BS-0001",
+  ruleId: "html-injection.dangerously-set-inner-html",
+  confidence: "high",
   category: "html-injection",
   risk: "high",
   status: "needs_review",
+  recommendation: "Verify the HTML input source and sanitization path.",
   title: "dangerouslySetInnerHTML 사용 검토 권장",
   message: "렌더링되는 HTML의 출처와 정제 여부를 확인해야 하는 점검 후보입니다.",
   evidence: {
