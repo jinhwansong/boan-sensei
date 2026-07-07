@@ -1,0 +1,56 @@
+# Example workflow only.
+# This file demonstrates one possible PR comment flow for boan-sensei.
+# It is not intended to be a mandatory CI gate for every project. Copy and adapt it.
+#
+# This repository builds boan-sensei from source for the example.
+# In a user project, clone this repository separately or use a future distributed package.
+
+name: boan-sensei example
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review-candidates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build boan-sensei
+        run: pnpm build
+
+      - name: Scan changed frontend files
+        run: pnpm --filter boan-sensei exec boan-sensei scan --mode basic --diff
+
+      - name: Generate PR comment body
+        run: pnpm --filter boan-sensei exec boan-sensei pr-comment
+
+      - name: Comment review candidates on PR
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: .boan-sensei/pr-comment.md

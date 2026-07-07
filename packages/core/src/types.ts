@@ -38,4 +38,5 @@ export interface ScanProjectOptions {
 export interface ReportOptions {
   projectRoot?: string;
   mode?: BoanMode;
+  top?: number;
 }

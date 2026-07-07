@@ -32,6 +32,8 @@ boan-sensei report --mode basic
 boan-sensei todo
 ```
 
+As an adapter-friendly single entry point, `boan-sensei review --mode basic` may run the same scan, report, and TODO sequence. Keep the explicit three-command flow available for conservative tool workflows.
+
 The bundles do not add MCP servers, automatic source modification, external URL scanning, or npm publishing assumptions.
 
 For deeper domain-specific review, consult the shared drafts in the top-level `skills/<name>/SKILL.md` files.

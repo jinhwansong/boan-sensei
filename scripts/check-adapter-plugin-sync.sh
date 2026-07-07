@@ -45,6 +45,13 @@ check_pair() {
 repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$repo_root"
 
+check_file "docs/slash-command-ux.md" "adapter validation status doc"
+require_pattern "docs/slash-command-ux.md" "실제 동작 확인됨" "verified status"
+require_pattern "docs/slash-command-ux.md" "확인 안 됨 \\(근거:" "unverified with evidence status"
+require_pattern "docs/slash-command-ux.md" "미지원 확인됨|미지원" "unsupported status vocabulary"
+require_pattern "docs/slash-command-ux.md" "Cursor 3\\.7\\.27" "Cursor local evidence"
+require_pattern "docs/slash-command-ux.md" "Access is denied" "Codex local blocker evidence"
+
 check_pair \
   "adapters/codex/AGENTS.md" \
   "plugins/codex-boan-sensei/skills/boan-sensei/SKILL.md" \

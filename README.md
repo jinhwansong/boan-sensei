@@ -90,6 +90,30 @@ pnpm build
 
 If the `boan-sensei` command is not available in the target tool, the adapter should ask the user how to expose the local CLI instead of assuming npm publishing.
 
+## Quick Start for Maintainers
+
+From this repository checkout:
+
+```bash
+pnpm install
+pnpm build
+node apps/cli/dist/index.js scan --mode basic
+node apps/cli/dist/index.js report --mode basic
+node apps/cli/dist/index.js todo
+```
+
+To smoke-test another local project without judging finding quality:
+
+```bash
+scripts/smoke-test-external.sh /path/to/target-project
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\smoke-test-external.ps1 C:\path\to\target-project
+```
+
 ## CLI Usage
 
 In normal adapter-first use, these commands are usually called by the adapter rather than typed directly by the user.
@@ -98,6 +122,7 @@ These are the commands the adapters are designed to run:
 
 ```bash
 boan-sensei scan
+boan-sensei review
 boan-sensei report
 boan-sensei todo
 boan-sensei pr-comment
@@ -143,6 +168,10 @@ The scanner skips:
 - `coverage`
 
 Add `.boan-senseiignore` at the project root to skip extra files or directories such as `dist/`, `src/generated/`, or `*.test.ts`.
+
+### `boan-sensei review [--mode basic|blue|red|purple] [--diff]`
+
+Runs `scan`, `report`, and `todo` in order as a single adapter-friendly entry point while keeping the same cautious review-candidate output.
 
 ### `boan-sensei report [--mode basic|blue|red|purple]`
 
@@ -242,6 +271,7 @@ MCP servers, automatic fixes, and full marketplace-style plugin packaging are ou
 
 - `examples/frontend-sample`: a tiny frontend project you can use to try `scan`, `report`, and `todo`.
 - `examples/adapter-install`: a copy guide for placing adapter files into another project.
+- `.github/workflows/boan-sensei-example.yml`: an example PR comment workflow; see `docs/github-actions-example.md`.
 
 ## Development
 

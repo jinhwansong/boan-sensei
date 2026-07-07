@@ -25,6 +25,8 @@ boan-sensei report --mode basic
 boan-sensei todo
 ```
 
+As an adapter-friendly single entry point, `boan-sensei review --mode basic` may be used to run the same scan, report, and TODO sequence. Keep the three-step flow above available for conservative tool workflows that prefer explicit commands.
+
 For specialized reports, use `--mode blue`, `--mode red`, or `--mode purple`.
 
 For deeper domain-specific review, consult the top-level `skills/<name>/SKILL.md` drafts such as `skills/xss-review/SKILL.md` or `skills/token-auth-review/SKILL.md`. These drafts are guidance only and are not wired to a `--skill` CLI option.

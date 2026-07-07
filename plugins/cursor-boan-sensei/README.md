@@ -21,7 +21,7 @@ Copy the rule into a target project:
 <target-project>/.cursor/rules/boan-sensei.mdc
 ```
 
-Before distribution, verify this Cursor rule installation path against the latest official Cursor documentation.
+Validation status is tracked in `../../docs/slash-command-ux.md`. As of 2026-07-07, Cursor `3.7.27` was available locally and the official Cursor Rules docs describe `.mdc` project rules. This bundle keeps `alwaysApply: false`, so treat it as request/context-sensitive guidance rather than an always-loaded global rule.
 
 Or use:
 

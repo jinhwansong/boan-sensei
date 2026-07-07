@@ -18,6 +18,8 @@ Copy the file into the target project root:
 
 If the target project already has an `AGENTS.md`, merge the boan-sensei section into the existing file instead of replacing project-specific instructions.
 
+Validation status is tracked in `../../docs/slash-command-ux.md`. As of 2026-07-07, `codex.exe` was present through WindowsApps, but `codex --help` failed with `Access is denied`, so this machine did not verify actual Codex loading of `AGENTS.md`. Keep this adapter documented as project instruction text until a working Codex session confirms it.
+
 ## Local CLI Requirement
 
 The instructions expect the local command to be available:
