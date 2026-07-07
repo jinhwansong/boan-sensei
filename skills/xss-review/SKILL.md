@@ -31,6 +31,8 @@ Use this skill when a user asks about XSS, HTML rendering, rich text editors, sa
 - DOMPurify usage.
 - Editor input value storage and rendering flow.
 
+`boan-sensei scan` collects static review candidates for `dangerouslySetInnerHTML`, `innerHTML`, `outerHTML`, and `insertAdjacentHTML`; it still does not assert that XSS is present.
+
 ## Output format
 
 Return a Markdown table:

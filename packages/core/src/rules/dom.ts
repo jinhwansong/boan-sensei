@@ -37,6 +37,20 @@ export const DOM_RULES: ScanRule[] = [
     message: "동적으로 삽입되는 HTML이 신뢰 가능한 값인지 확인이 필요합니다."
   },
   {
+    keyword: "outerHTML",
+    category: "html-injection",
+    risk: "medium",
+    title: "outerHTML usage review recommended",
+    message: "HTML rendering review candidate. Verify input source and sanitization path before relying on this render flow."
+  },
+  {
+    keyword: "insertAdjacentHTML",
+    category: "html-injection",
+    risk: "medium",
+    title: "insertAdjacentHTML usage review recommended",
+    message: "HTML insertion review candidate. Verify input source and sanitization path before relying on this render flow."
+  },
+  {
     keyword: "iframe",
     category: "embedding",
     risk: "medium",

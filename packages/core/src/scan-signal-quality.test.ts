@@ -215,6 +215,24 @@ describe("scanProject signal quality heuristics", () => {
     expect(findings[2].message).toContain("sanitization");
   });
 
+  test("collects outerHTML and insertAdjacentHTML review candidates", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/dom.ts",
+      [
+        "element.outerHTML = html;",
+        "element.insertAdjacentHTML('beforeend', html);"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(2);
+    expect(findings.map((finding) => finding.category)).toEqual(["html-injection", "html-injection"]);
+    expect(findings.map((finding) => finding.risk)).toEqual(["medium", "medium"]);
+  });
+
   test("collects iframe embed and object external content candidates", async () => {
     const root = await makeProject();
     await writeProjectFile(
