@@ -518,7 +518,8 @@ function completeFinding(finding: FindingCandidate, rule?: ScanRule): Finding {
     ...finding,
     ruleId: finding.ruleId ?? rule?.ruleId ?? getDefaultRuleId(finding, rule),
     confidence: finding.confidence ?? rule?.confidence ?? getDefaultConfidence(finding),
-    recommendation: finding.recommendation ?? rule?.recommendation ?? getDefaultRecommendation(finding)
+    recommendation: finding.recommendation ?? rule?.recommendation ?? getDefaultRecommendation(finding),
+    redQuestion: finding.redQuestion ?? rule?.redQuestion
   };
 }
 

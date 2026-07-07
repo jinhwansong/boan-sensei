@@ -13,7 +13,8 @@ export const NETWORK_RULES: ScanRule[] = [
     category: "cross-window-messaging",
     risk: "medium",
     title: "message event listener review recommended",
-    message: "Message event listener candidate. Verify event.origin allowlist and received data validation."
+    message: "Message event listener candidate. Verify event.origin allowlist and received data validation.",
+    redQuestion: "Could a message from an untrusted origin reach this handler without an origin allowlist check?"
   },
   {
     keyword: "NEXT_PUBLIC_",

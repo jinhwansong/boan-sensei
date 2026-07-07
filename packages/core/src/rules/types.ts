@@ -11,4 +11,5 @@ export interface ScanRule {
   title: string;
   message: string;
   recommendation?: string;
+  redQuestion?: string;
 }

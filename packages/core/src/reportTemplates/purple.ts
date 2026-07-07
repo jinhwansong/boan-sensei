@@ -1,4 +1,5 @@
 import { BASIC_DISCLAIMER, FEEDBACK_NOTICE, renderEmptyOrList, renderRiskSummary, renderTopReviewSection } from "./basic.js";
+import { getRedQuestion } from "./red.js";
 import type { Finding, ReportOptions } from "../types.js";
 
 export function generatePurpleReport(findings: Finding[], options: ReportOptions = {}): string {
@@ -37,8 +38,10 @@ export function generatePurpleReport(findings: Finding[], options: ReportOptions
 }
 
 function renderPurpleFinding(finding: Finding): string {
+  const redQuestion = getRedQuestion(finding);
   return [
     `### ${finding.id} ${finding.title}`,
+    `- Red question: ${redQuestion}`,
     "",
     `- 위치: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``,
     "#### Red 관점",

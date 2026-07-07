@@ -37,6 +37,23 @@ describe("generateReport", () => {
     expect(markdown).toContain("침투 테스트/보안 인증/전문 보안 진단을 대체하지 않습니다");
     expect(markdown).toContain("점검 후보");
   });
+
+  test("renders category-specific red questions in red and purple reports", () => {
+    const categoryFindings: Finding[] = [
+      finding("BS-0100", "secret"),
+      finding("BS-0101", "cross-window-messaging"),
+      finding("BS-0102", "html-injection")
+    ];
+
+    const red = generateReport(categoryFindings, { mode: "red", projectRoot: "/repo" });
+    const purple = generateReport(categoryFindings, { mode: "purple", projectRoot: "/repo" });
+
+    for (const markdown of [red, purple]) {
+      expect(markdown).toContain("secret-like value");
+      expect(markdown).toContain("untrusted origin");
+      expect(markdown).toContain("user-controlled HTML");
+    }
+  });
 });
 
 describe("generatePrComment", () => {
@@ -69,6 +86,25 @@ describe("generatePrComment", () => {
     expect(comment).not.toContain("취약점 발견");
   });
 });
+
+function finding(id: string, category: string): Finding {
+  return {
+    id,
+    ruleId: `${category}.test`,
+    confidence: "medium",
+    category,
+    risk: category === "secret" ? "high" : "medium",
+    status: "needs_review",
+    title: `${category} candidate`,
+    message: `${category} review candidate. Confirm project context before changing code.`,
+    recommendation: "Review this candidate in project context.",
+    evidence: {
+      filePath: "src/example.ts",
+      lineNumber: 1,
+      linePreview: category
+    }
+  };
+}
 
 describe("feedback guidance", () => {
   test("adds false positive feedback guidance to generated outputs", () => {

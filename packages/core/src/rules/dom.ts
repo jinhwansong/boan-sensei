@@ -41,14 +41,16 @@ export const DOM_RULES: ScanRule[] = [
     category: "html-injection",
     risk: "medium",
     title: "outerHTML usage review recommended",
-    message: "HTML rendering review candidate. Verify input source and sanitization path before relying on this render flow."
+    message: "HTML rendering review candidate. Verify input source and sanitization path before relying on this render flow.",
+    redQuestion: "Could external or user-controlled HTML reach this render path without a clearly reviewed sanitization step?"
   },
   {
     keyword: "insertAdjacentHTML",
     category: "html-injection",
     risk: "medium",
     title: "insertAdjacentHTML usage review recommended",
-    message: "HTML insertion review candidate. Verify input source and sanitization path before relying on this render flow."
+    message: "HTML insertion review candidate. Verify input source and sanitization path before relying on this render flow.",
+    redQuestion: "Could external or user-controlled HTML reach this render path without a clearly reviewed sanitization step?"
   },
   {
     keyword: "iframe",

@@ -22,6 +22,7 @@ export interface Finding {
   title: string;
   message: string;
   recommendation: string;
+  redQuestion?: string;
   evidence: FindingEvidence;
 }
 
