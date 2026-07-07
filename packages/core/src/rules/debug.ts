@@ -2,7 +2,7 @@ import type { ScanRule } from "./types.js";
 
 export const DEBUG_RULES: ScanRule[] = [
   {
-    keyword: "console.log",
+    pattern: /\bconsole\.(?:log|debug|info|warn|error)\s*\(/,
     category: "debug-output",
     risk: "low",
     title: "console.log 출력 확인 필요",

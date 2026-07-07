@@ -39,7 +39,7 @@ pnpm build
 
 Then install or load this plugin scaffold according to your Codex plugin development workflow.
 
-Before distribution, verify the Codex plugin installation location and manifest shape against the latest official Codex plugin documentation.
+Validation status is tracked in `../../docs/slash-command-ux.md`. As of 2026-07-07, local Codex execution was blocked by WindowsApps `Access is denied`, so this plugin scaffold has not been load-tested in Codex on this machine. Before distribution, verify the Codex plugin installation location and manifest shape against a working Codex plugin development workflow.
 
 The target project still needs a usable `boan-sensei` CLI command or an agreed local execution path.
 

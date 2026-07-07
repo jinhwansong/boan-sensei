@@ -1,4 +1,4 @@
-import { renderEmptyOrList, renderRiskSummary } from "./basic.js";
+import { FEEDBACK_NOTICE, renderEmptyOrList, renderRiskSummary, renderTopReviewSection } from "./basic.js";
 import type { Finding, ReportOptions } from "../types.js";
 
 const RED_NOTICE =
@@ -28,6 +28,8 @@ export function generateRedReport(findings: Finding[], options: ReportOptions = 
     "",
     renderRiskSummary(findings),
     "",
+    renderTopReviewSection(findings, options.top),
+    "",
     "## 5. 공격자 관점 검토 질문",
     "",
     renderEmptyOrList(findings, renderRedFinding),
@@ -35,6 +37,8 @@ export function generateRedReport(findings: Finding[], options: ReportOptions = 
     "## 6. 안내 문구",
     "",
     "모든 질문은 코드 리뷰와 방어 보강을 위한 검토 자료입니다. 실제 영향 여부는 사용자가 직접 확인해야 합니다.",
+    "",
+    FEEDBACK_NOTICE,
     ""
   ].join("\n");
 }

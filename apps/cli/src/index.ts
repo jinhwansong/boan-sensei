@@ -26,7 +26,7 @@ try {
     );
     console.log(`보안선생 한마디: ${getSenseiComment(findings)}`);
   } else if (command === "review") {
-    const result = await runReviewWorkflow(process.cwd(), { mode, diff: hasOption("--diff") });
+    const result = await runReviewWorkflow(process.cwd(), { mode, diff: hasOption("--diff"), top: getNumberOptionValue("--top") });
     console.log(
       `boan-sensei: ${result.mode} mode로 점검 후보 ${result.findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`
     );
@@ -35,7 +35,7 @@ try {
     console.log(`boan-sensei: ${result.todoFile}를 생성했습니다.`);
   } else if (command === "report") {
     const findingsFile = await readFindingsFile();
-    const markdown = generateReport(findingsFile.findings, { projectRoot: findingsFile.projectRoot, mode });
+    const markdown = generateReport(findingsFile.findings, { projectRoot: findingsFile.projectRoot, mode, top: getNumberOptionValue("--top") });
     const reportFile = REPORT_FILE_BY_MODE[mode];
     await writeFile(resolve(process.cwd(), reportFile), markdown, "utf8");
     console.log(`boan-sensei: ${reportFile}를 생성했습니다.`);
@@ -79,13 +79,25 @@ function getOptionValue(name: string): string | undefined {
   return process.argv[index + 1];
 }
 
+function getNumberOptionValue(name: string): number | undefined {
+  const value = getOptionValue(name);
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`${name} 값은 1 이상의 정수여야 합니다.`);
+  }
+  return parsed;
+}
+
 function printHelp() {
   console.log(`boan-sensei v0.1
 
 Usage:
   boan-sensei scan [--mode basic|blue|red|purple] [--diff]
-  boan-sensei review [--mode basic|blue|red|purple] [--diff]
-  boan-sensei report [--mode basic|blue|red|purple]
+  boan-sensei review [--mode basic|blue|red|purple] [--diff] [--top n]
+  boan-sensei report [--mode basic|blue|red|purple] [--top n]
   boan-sensei todo
   boan-sensei pr-comment`);
 }

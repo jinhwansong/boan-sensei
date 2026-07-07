@@ -55,14 +55,17 @@ export async function scanProject(projectRoot = process.cwd(), options: ScanProj
         if (rule.keyword && !isKeywordCodeSignal(sourceFile, scannableLine, lineStart, rule.keyword)) {
           continue;
         }
+        if (shouldSkipRuleMatch(scannableLine, rule)) {
+          continue;
+        }
 
         findings.push({
           id: formatFindingId(findings.length + 1),
           category: rule.category,
-          risk: rule.risk,
-          status: getFindingStatus(scannableLine, rule),
+          risk: getFindingRisk(scannableLine, rule, lines, index),
+          status: getFindingStatus(scannableLine, rule, lines, index),
           title: rule.title,
-          message: rule.message,
+          message: getFindingMessage(scannableLine, rule, lines, index),
           evidence: {
             filePath: toPortablePath(relative(root, filePath)),
             lineNumber: index + 1,
@@ -73,6 +76,7 @@ export async function scanProject(projectRoot = process.cwd(), options: ScanProj
     });
 
     findings.push(...collectFileUploadFindings(root, filePath, contents, findings.length));
+    applyFileCorrelations(findings, toPortablePath(relative(root, filePath)), contents);
   }
 
   findings.push(...(await collectDependencyFindings(root, findings.length, ignorePatterns, options.registryFetch)));
@@ -548,9 +552,46 @@ function findLineCommentIndex(line: string): number {
   return -1;
 }
 
-function getFindingStatus(line: string, rule: ScanRule): Finding["status"] {
+function getFindingRisk(line: string, rule: ScanRule, lines: string[] = [], lineIndex = 0): Finding["risk"] {
+  if (isPublicEnvRule(rule)) {
+    return hasSensitivePublicEnvName(line) ? "medium" : "low";
+  }
+  if (isConsoleRule(rule)) {
+    return hasSensitiveLogIdentifier(line) ? "medium" : "low";
+  }
+  if (isStorageRule(rule)) {
+    return hasStorageAuthIdentifier(line) ? "medium" : "low";
+  }
+  if (isDangerouslySetInnerHtmlRule(rule)) {
+    return hasLiteralDangerousHtmlValue(line) || hasNearbySanitizeSignal(line, lines, lineIndex) ? "low" : rule.risk;
+  }
+  return rule.risk;
+}
+
+function getFindingStatus(
+  line: string,
+  rule: ScanRule,
+  lines: string[] = [],
+  lineIndex = 0
+): Finding["status"] {
   if (rule.status) {
     return rule.status;
+  }
+
+  if (isPublicEnvRule(rule)) {
+    return hasSensitivePublicEnvName(line) ? "needs_review" : "low_confidence";
+  }
+  if (isConsoleRule(rule)) {
+    return hasSensitiveLogIdentifier(line) ? "needs_review" : "low_confidence";
+  }
+  if (isStorageRule(rule)) {
+    return hasStorageAuthIdentifier(line) ? "needs_review" : "low_confidence";
+  }
+  if (isDangerouslySetInnerHtmlRule(rule)) {
+    if (hasLiteralDangerousHtmlValue(line) || hasNearbySanitizeSignal(line, lines, lineIndex)) {
+      return "low_confidence";
+    }
+    return "needs_review";
   }
 
   if (!rule.keyword) {
@@ -566,6 +607,180 @@ function getFindingStatus(line: string, rule: ScanRule): Finding["status"] {
   }
 
   return "low_confidence";
+}
+
+function getFindingMessage(line: string, rule: ScanRule, lines: string[], lineIndex: number): string {
+  if (isConsoleRule(rule)) {
+    return hasSensitiveLogIdentifier(line)
+      ? "Console output candidate. Verify whether token, password, email, auth, or secret-like data can be logged in production."
+      : "Console output candidate with no obvious sensitive identifier on the same line. Review if it should remain in production code.";
+  }
+  if (isDangerouslySetInnerHtmlRule(rule)) {
+    if (hasNearbySanitizeSignal(line, lines, lineIndex)) {
+      return "HTML injection sink candidate. A sanitize flow was detected nearby, but verify input source and sanitization path.";
+    }
+    return "HTML injection sink candidate. Verify input source and sanitization path.";
+  }
+  if (rule.category === "cross-window-messaging") {
+    return "postMessage usage candidate. Verify targetOrigin and event.origin allowlist. 확인이 필요합니다.";
+  }
+  return rule.message;
+}
+
+function applyFileCorrelations(findings: Finding[], filePath: string, contents: string): void {
+  const fileFindings = findings.filter((finding) => finding.evidence.filePath === filePath);
+  if (fileFindings.length === 0) {
+    return;
+  }
+
+  const htmlSinks = fileFindings.filter(isUnsanitizedDangerousHtmlFinding);
+  if (htmlSinks.length > 0 && hasExternalInputSignal(contents)) {
+    for (const finding of htmlSinks) {
+      raiseCorrelatedFinding(finding, finding.id);
+    }
+  }
+
+  const wildcardPostMessages = fileFindings.filter(isWildcardPostMessageFinding);
+  const messageListeners = fileFindings.filter(isMessageListenerFinding);
+  if (wildcardPostMessages.length > 0 && messageListeners.length > 0 && !hasMessageOriginCheck(contents)) {
+    for (const finding of wildcardPostMessages) {
+      raiseCorrelatedFinding(finding, messageListeners[0].id);
+    }
+    for (const finding of messageListeners) {
+      raiseCorrelatedFinding(finding, wildcardPostMessages[0].id);
+    }
+  }
+
+  const tokenStorageFindings = fileFindings.filter(isTokenStorageFinding);
+  const xssOrEmbeddingFindings = fileFindings.filter(isHtmlOrEmbeddingFinding);
+  if (tokenStorageFindings.length > 0 && xssOrEmbeddingFindings.length > 0) {
+    for (const finding of tokenStorageFindings) {
+      raiseCorrelatedFinding(finding, xssOrEmbeddingFindings[0].id);
+    }
+    for (const finding of xssOrEmbeddingFindings) {
+      raiseCorrelatedFinding(finding, tokenStorageFindings[0].id);
+    }
+  }
+}
+
+function isUnsanitizedDangerousHtmlFinding(finding: Finding): boolean {
+  return (
+    finding.category === "html-injection" &&
+    finding.evidence.linePreview.includes("dangerouslySetInnerHTML") &&
+    finding.status === "needs_review"
+  );
+}
+
+function hasExternalInputSignal(contents: string): boolean {
+  return /\b(?:useParams|useSearchParams)\b|req\.(?:query|body)\b|\b[A-Za-z_$][\w$]*\.data\b/.test(contents);
+}
+
+function isWildcardPostMessageFinding(finding: Finding): boolean {
+  return (
+    finding.category === "cross-window-messaging" &&
+    /postMessage\s*\([\s\S]*,\s*["'`]\*["'`]|targetOrigin\s*:\s*["'`]\*["'`]/.test(finding.evidence.linePreview)
+  );
+}
+
+function isMessageListenerFinding(finding: Finding): boolean {
+  return finding.category === "cross-window-messaging" && /addEventListener\s*\(\s*["']message["']/.test(finding.evidence.linePreview);
+}
+
+function hasMessageOriginCheck(contents: string): boolean {
+  return /\bevent\.origin\b|\.origin\s*(?:===|!==|==|!=)|allowedOrigins?|originAllowlist|allowlist/i.test(contents);
+}
+
+function isTokenStorageFinding(finding: Finding): boolean {
+  return finding.category === "browser-storage" && hasStorageAuthIdentifier(finding.evidence.linePreview);
+}
+
+function isHtmlOrEmbeddingFinding(finding: Finding): boolean {
+  return finding.category === "html-injection" || finding.category === "embedding";
+}
+
+function raiseCorrelatedFinding(finding: Finding, relatedFindingId: string): void {
+  finding.risk = raiseRisk(finding.risk);
+  if (!finding.message.includes("관련 신호가 같은 파일에서 함께 발견되었습니다")) {
+    finding.message = `${finding.message} 관련 신호가 같은 파일에서 함께 발견되었습니다. 관련 finding: ${relatedFindingId}.`;
+  }
+}
+
+function raiseRisk(risk: Finding["risk"]): Finding["risk"] {
+  if (risk === "low") {
+    return "medium";
+  }
+  if (risk === "medium") {
+    return "high";
+  }
+  return "high";
+}
+
+function shouldSkipRuleMatch(line: string, rule: ScanRule): boolean {
+  return isTargetBlankRule(rule) && hasNoopenerAndNoreferrer(line);
+}
+
+function isPublicEnvRule(rule: ScanRule): boolean {
+  return rule.category === "public-env";
+}
+
+function isConsoleRule(rule: ScanRule): boolean {
+  return rule.category === "debug-output";
+}
+
+function isStorageRule(rule: ScanRule): boolean {
+  return rule.category === "browser-storage";
+}
+
+function isDangerouslySetInnerHtmlRule(rule: ScanRule): boolean {
+  return rule.category === "html-injection" && rule.keyword === "dangerouslySetInnerHTML";
+}
+
+function isTargetBlankRule(rule: ScanRule): boolean {
+  return rule.category === "navigation" && rule.keyword === "target=\"_blank\"";
+}
+
+function hasSensitivePublicEnvName(line: string): boolean {
+  const sensitiveNamePattern = /\b[A-Z0-9_$]*(?:KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|PRIVATE)[A-Z0-9_$]*\b/i;
+  if (/\b(?:NEXT_PUBLIC_|VITE_)[A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL|PRIVATE)[A-Z0-9_]*\b/i.test(line)) {
+    return true;
+  }
+  const assignmentTarget = line.split(/\b(?:import\.meta\.env|process\.env)\b/)[0] ?? "";
+  return sensitiveNamePattern.test(assignmentTarget);
+}
+
+function hasSensitiveLogIdentifier(line: string): boolean {
+  return /(?:token|password|email|auth|secret)/i.test(line);
+}
+
+function hasStorageAuthIdentifier(line: string): boolean {
+  return /\b(?:token|access|refresh|jwt|authorization|bearer|auth)\b/i.test(line);
+}
+
+function hasLiteralDangerousHtmlValue(line: string): boolean {
+  return /__html\s*:\s*(?:"[^"]*"|'[^']*'|`[^`]*`)/.test(line);
+}
+
+function hasNearbySanitizeSignal(line: string, lines: string[], lineIndex: number): boolean {
+  const htmlValue = getDangerousHtmlIdentifier(line);
+  const start = Math.max(0, lineIndex - 10);
+  const nearbyLines = lines.slice(start, lineIndex + 1);
+  return nearbyLines.some((nearbyLine) => {
+    if (!/\b(?:DOMPurify|sanitize|purify)\b/i.test(nearbyLine)) {
+      return false;
+    }
+    return htmlValue ? new RegExp(`\\b${escapeRegex(htmlValue)}\\b`).test(nearbyLine) : true;
+  });
+}
+
+function getDangerousHtmlIdentifier(line: string): string | undefined {
+  const match = line.match(/__html\s*:\s*([A-Za-z_$][\w$]*)/);
+  return match?.[1];
+}
+
+function hasNoopenerAndNoreferrer(line: string): boolean {
+  const relMatch = line.match(/\brel\s*=\s*(?:"([^"]*)"|'([^']*)'|{["']([^"']*)["']})/i);
+  const relValue = relMatch?.[1] ?? relMatch?.[2] ?? relMatch?.[3] ?? "";
+  return /\bnoopener\b/i.test(relValue) && /\bnoreferrer\b/i.test(relValue);
 }
 
 function looksLikeFunctionCall(line: string, keyword: string): boolean {

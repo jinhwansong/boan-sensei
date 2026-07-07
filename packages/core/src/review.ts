@@ -10,6 +10,7 @@ export interface ReviewWorkflowOptions {
   mode?: BoanMode | string;
   diff?: boolean;
   registryFetch?: ScanProjectOptions["registryFetch"];
+  top?: number;
 }
 
 export interface ReviewWorkflowResult {
@@ -37,7 +38,7 @@ export async function runReviewWorkflow(
 
   await writeFile(
     resolve(projectRoot, reportFile),
-    generateReport(findings, { projectRoot: resolve(projectRoot), mode }),
+    generateReport(findings, { projectRoot: resolve(projectRoot), mode, top: options.top }),
     "utf8"
   );
   await writeFile(resolve(projectRoot, todoFile), generateTodo(findings), "utf8");

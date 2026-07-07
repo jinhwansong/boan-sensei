@@ -10,10 +10,10 @@ export type { ScanRule } from "./types.js";
 
 export const SCAN_RULES: ScanRule[] = [
   ...DOM_RULES,
-  ...NETWORK_RULES.slice(0, 5),
+  ...NETWORK_RULES.slice(0, 6),
   DEBUG_RULES[0],
   ...SECRET_RULES,
-  NETWORK_RULES[5],
+  NETWORK_RULES[6],
   ...DYNAMIC_EXECUTION_RULES,
   ...DEBUG_RULES.slice(1)
 ];

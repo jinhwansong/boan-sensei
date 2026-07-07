@@ -1,4 +1,4 @@
-import { BASIC_DISCLAIMER, renderEmptyOrList, renderRiskSummary } from "./basic.js";
+import { BASIC_DISCLAIMER, FEEDBACK_NOTICE, renderEmptyOrList, renderRiskSummary, renderTopReviewSection } from "./basic.js";
 import type { Finding, ReportOptions } from "../types.js";
 
 export function generateBlueReport(findings: Finding[], options: ReportOptions = {}): string {
@@ -21,6 +21,8 @@ export function generateBlueReport(findings: Finding[], options: ReportOptions =
     "",
     renderRiskSummary(findings),
     "",
+    renderTopReviewSection(findings, options.top),
+    "",
     "## 4. Blue Team 확인 항목",
     "",
     renderEmptyOrList(findings, renderBlueFinding),
@@ -35,6 +37,8 @@ export function generateBlueReport(findings: Finding[], options: ReportOptions =
     "## 6. 안내 문구",
     "",
     BASIC_DISCLAIMER,
+    "",
+    FEEDBACK_NOTICE,
     ""
   ].join("\n");
 }

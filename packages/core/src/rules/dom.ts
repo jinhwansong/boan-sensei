@@ -44,6 +44,20 @@ export const DOM_RULES: ScanRule[] = [
     message: "iframe의 출처, sandbox 속성, 권한 범위를 확인해야 하는 점검 후보입니다."
   },
   {
+    pattern: /<embed\b/i,
+    category: "embedding",
+    risk: "low",
+    title: "embed usage review recommended",
+    message: "External content embed candidate. Verify source allowlist and embedding policy."
+  },
+  {
+    pattern: /<object\b/i,
+    category: "embedding",
+    risk: "low",
+    title: "object usage review recommended",
+    message: "External content object candidate. Verify source allowlist and embedding policy."
+  },
+  {
     keyword: "target=\"_blank\"",
     category: "navigation",
     risk: "low",

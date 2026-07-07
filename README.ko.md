@@ -90,6 +90,30 @@ pnpm build
 
 대상 도구에서 `boan-sensei` 명령을 사용할 수 없다면, adapter는 npm 배포를 전제로 진행하지 말고 사용자에게 로컬 CLI를 어떻게 노출할지 물어봐야 합니다.
 
+## Quick Start for Maintainers
+
+저장소 checkout에서 다음 순서로 확인합니다.
+
+```bash
+pnpm install
+pnpm build
+node apps/cli/dist/index.js scan --mode basic
+node apps/cli/dist/index.js report --mode basic
+node apps/cli/dist/index.js todo
+```
+
+다른 로컬 프로젝트에서 finding 품질을 판단하지 않고 크래시 없이 동작하는지만 확인하려면:
+
+```bash
+scripts/smoke-test-external.sh /path/to/target-project
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\smoke-test-external.ps1 C:\path\to\target-project
+```
+
 ## 사용법
 
 일반적인 adapter-first 사용에서는 사용자가 직접 입력하기보다 adapter가 이 명령들을 호출합니다.

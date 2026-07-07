@@ -90,6 +90,30 @@ pnpm build
 
 If the `boan-sensei` command is not available in the target tool, the adapter should ask the user how to expose the local CLI instead of assuming npm publishing.
 
+## Quick Start for Maintainers
+
+From this repository checkout:
+
+```bash
+pnpm install
+pnpm build
+node apps/cli/dist/index.js scan --mode basic
+node apps/cli/dist/index.js report --mode basic
+node apps/cli/dist/index.js todo
+```
+
+To smoke-test another local project without judging finding quality:
+
+```bash
+scripts/smoke-test-external.sh /path/to/target-project
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\smoke-test-external.ps1 C:\path\to\target-project
+```
+
 ## CLI Usage
 
 In normal adapter-first use, these commands are usually called by the adapter rather than typed directly by the user.

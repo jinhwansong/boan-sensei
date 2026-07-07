@@ -9,6 +9,13 @@ export const NETWORK_RULES: ScanRule[] = [
     message: "메시지 origin 검증과 수신 데이터 검증 여부를 확인해야 합니다."
   },
   {
+    pattern: /addEventListener\s*\(\s*["']message["']/,
+    category: "cross-window-messaging",
+    risk: "medium",
+    title: "message event listener review recommended",
+    message: "Message event listener candidate. Verify event.origin allowlist and received data validation."
+  },
+  {
     keyword: "NEXT_PUBLIC_",
     category: "public-env",
     risk: "medium",

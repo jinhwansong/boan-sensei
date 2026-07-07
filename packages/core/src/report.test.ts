@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { generatePrComment, generateReport, type Finding } from "./index.js";
+import { generatePrComment, generateReport, generateTodo, type Finding } from "./index.js";
 
 const findings: Finding[] = [
   {
@@ -56,5 +56,18 @@ describe("generatePrComment", () => {
     expect(comment).toContain("BS-0002");
     expect(comment).toContain("점검 후보");
     expect(comment).not.toContain("취약점 발견");
+  });
+});
+
+describe("feedback guidance", () => {
+  test("adds false positive feedback guidance to generated outputs", () => {
+    const report = generateReport(findings, { projectRoot: "/repo" });
+    const todo = generateTodo(findings);
+    const comment = generatePrComment(findings);
+
+    for (const output of [report, todo, comment]) {
+      expect(output).toContain("GitHub Issues");
+      expect(output).toContain("category");
+    }
   });
 });

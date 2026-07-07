@@ -1,4 +1,5 @@
 import { resolveMode } from "./modes.js";
+import { FEEDBACK_NOTICE } from "./reportTemplates/basic.js";
 import { generateBasicReport } from "./reportTemplates/basic.js";
 import { generateBlueReport } from "./reportTemplates/blue.js";
 import { generatePurpleReport } from "./reportTemplates/purple.js";
@@ -7,20 +8,45 @@ import type { Finding, ReportOptions } from "./types.js";
 
 export function generateReport(findings: Finding[], options: ReportOptions = {}): string {
   const mode = resolveMode(options.mode);
+  const sortedFindings = sortFindingsForReport(findings);
 
   if (mode === "blue") {
-    return generateBlueReport(findings, options);
+    return generateBlueReport(sortedFindings, options);
   }
 
   if (mode === "red") {
-    return generateRedReport(findings, options);
+    return generateRedReport(sortedFindings, options);
   }
 
   if (mode === "purple") {
-    return generatePurpleReport(findings, options);
+    return generatePurpleReport(sortedFindings, options);
   }
 
-  return generateBasicReport(findings, options);
+  return generateBasicReport(sortedFindings, options);
+}
+
+export function sortFindingsForReport(findings: Finding[]): Finding[] {
+  return [...findings].sort((left, right) => getFindingPriority(left) - getFindingPriority(right));
+}
+
+function getFindingPriority(finding: Finding): number {
+  if (finding.risk === "high") {
+    return 0;
+  }
+  if (finding.risk === "medium" && finding.status === "needs_review" && !isCorrelatedFinding(finding)) {
+    return 1;
+  }
+  if (finding.risk === "medium" && isCorrelatedFinding(finding)) {
+    return 2;
+  }
+  if (finding.risk === "medium" && finding.status === "low_confidence") {
+    return 3;
+  }
+  return 4;
+}
+
+function isCorrelatedFinding(finding: Finding): boolean {
+  return finding.message.includes("관련 신호가 같은 파일에서 함께 발견되었습니다");
 }
 
 export function generateTodo(findings: Finding[]): string {
@@ -43,6 +69,8 @@ export function generateTodo(findings: Finding[]): string {
     lines.push(`  - 확인: ${finding.message}`);
     lines.push(`  - 상태: ${finding.status}`);
   }
+  lines.push("");
+  lines.push(FEEDBACK_NOTICE);
   lines.push("");
   return lines.join("\n");
 }
@@ -80,6 +108,8 @@ export function generatePrComment(findings: Finding[]): string {
     lines.push(`_Additional review candidates omitted from this comment: ${findings.length - 20}_`);
   }
 
+  lines.push("");
+  lines.push(FEEDBACK_NOTICE);
   lines.push("");
   return lines.join("\n");
 }

@@ -1,5 +1,8 @@
 import type { Finding, ReportOptions } from "../types.js";
 
+export const FEEDBACK_NOTICE =
+  "이 결과 중 명백한 오탐이나 개선 아이디어가 있다면 GitHub Issues에 finding의 category와 위치를 함께 남겨주세요. 정확도 개선에 직접 반영됩니다.";
+
 export const BASIC_DISCLAIMER =
   "이 보고서는 프론트엔드 보안 점검 후보를 정리하는 보조 자료이며, 침투 테스트/보안 인증/전문 보안 진단을 대체하지 않습니다.";
 
@@ -25,6 +28,8 @@ export function generateBasicReport(findings: Finding[], options: ReportOptions 
     "",
     renderRiskSummary(findings, riskCounts),
     "",
+    renderTopReviewSection(findings, options.top),
+    "",
     "## 4. 상세 점검 후보",
     "",
     findings.length === 0 ? "현재 규칙 기준으로 확인할 점검 후보가 없습니다." : renderFindingDetails(findings),
@@ -39,6 +44,8 @@ export function generateBasicReport(findings: Finding[], options: ReportOptions 
     "## 6. 안내 문구",
     "",
     BASIC_DISCLAIMER,
+    "",
+    FEEDBACK_NOTICE,
     ""
   ].join("\n");
 }
@@ -61,6 +68,30 @@ export function renderFindingDetails(findings: Finding[]): string {
       ].join("\n")
     )
     .join("\n\n");
+}
+
+export function renderTopReviewSection(findings: Finding[], top = 10): string {
+  const topFindings = findings.filter(isTopReviewFinding).slice(0, top);
+  return [
+    `## 우선 검토 권장 (상위 ${top}건)`,
+    "",
+    topFindings.length === 0
+      ? "현재 우선 검토 권장 기준에 해당하는 점검 후보가 없습니다."
+      : topFindings.map(renderTopReviewFinding).join("\n\n")
+  ].join("\n");
+}
+
+function renderTopReviewFinding(finding: Finding): string {
+  return [
+    `- ${finding.id} ${finding.title}`,
+    `  - risk/status: \`${finding.risk}/${finding.status}\``,
+    `  - 위치: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``,
+    `  - 확인: ${finding.message}`
+  ].join("\n");
+}
+
+function isTopReviewFinding(finding: Finding): boolean {
+  return finding.risk === "high" || (finding.risk === "medium" && finding.status === "needs_review");
 }
 
 export function renderRiskSummary(findings: Finding[], riskCounts = countByRisk(findings)): string {

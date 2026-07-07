@@ -28,5 +28,33 @@ export const SECRET_RULES: ScanRule[] = [
     risk: "high",
     title: "DB 연결 문자열 후보 확인 필요",
     message: "자격증명이 포함된 DB 연결 문자열 후보가 발견되었습니다. 실제 유효한 접속 정보로 단정하지 말고 노출 여부 확인을 권장합니다."
+  },
+  {
+    pattern: /\b(?:ghp_|github_pat_)[A-Za-z0-9_]{20,}/,
+    category: "secret",
+    risk: "high",
+    title: "GitHub token candidate review needed",
+    message: "Hardcoded GitHub token-like value candidate. Verify whether this is a real secret before rotation or exposure review."
+  },
+  {
+    pattern: /\b(?:sk_live_|pk_live_)[A-Za-z0-9_]{20,}/,
+    category: "secret",
+    risk: "high",
+    title: "Stripe key candidate review needed",
+    message: "Hardcoded Stripe key-like value candidate. Verify whether this value is intended for client exposure before follow-up."
+  },
+  {
+    pattern: /\bAIza[A-Za-z0-9_-]{30,}/,
+    category: "secret",
+    risk: "high",
+    title: "Google API key candidate review needed",
+    message: "Hardcoded Google API key-like value candidate. Verify intended exposure and restriction settings."
+  },
+  {
+    pattern: /BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/,
+    category: "secret",
+    risk: "high",
+    title: "Private key block candidate review needed",
+    message: "Private key block marker candidate. Verify whether this is test data or a secret that needs handling."
   }
 ];
