@@ -20,7 +20,7 @@ export function generateBasicReport(findings: Finding[], options: ReportOptions 
     "## 2. 점검 범위",
     "",
     `- 기준 경로: \`${projectRoot}\``,
-    "- 검사 대상: `src` 하위의 `.js`, `.jsx`, `.ts`, `.tsx`, `.vue` 파일과 루트 `package.json`",
+    "- 검사 대상: 존재하는 `src`, `app`, `pages`, `components` 하위의 `.js`, `.jsx`, `.ts`, `.tsx`, `.vue` 파일과 루트 `package.json`",
     "- 제외 경로: `node_modules`, `dist`, `build`, `.next`, `.git`, `coverage`",
     "- 검사 방식: 지정 키워드 기반 정적 후보 수집과 의존성 메타데이터 확인",
     "",
@@ -57,8 +57,10 @@ export function renderFindingDetails(findings: Finding[]): string {
         `### ${finding.id} ${finding.title}`,
         "",
         `- category: \`${finding.category}\``,
+        `- ruleId: \`${finding.ruleId}\``,
         `- risk: \`${finding.risk}\``,
         `- status: \`${finding.status}\``,
+        `- confidence: \`${finding.confidence}\``,
         `- 위치: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``,
         `- 메시지: ${finding.message}`,
         "",
@@ -84,7 +86,10 @@ export function renderTopReviewSection(findings: Finding[], top = 10): string {
 function renderTopReviewFinding(finding: Finding): string {
   return [
     `- ${finding.id} ${finding.title}`,
+    `  - ruleId: \`${finding.ruleId}\``,
     `  - risk/status: \`${finding.risk}/${finding.status}\``,
+    `  - confidence: \`${finding.confidence}\``,
+    `  - recommendation: ${finding.recommendation}`,
     `  - 위치: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``,
     `  - 확인: ${finding.message}`
   ].join("\n");

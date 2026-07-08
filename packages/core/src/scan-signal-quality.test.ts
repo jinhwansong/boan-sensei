@@ -141,6 +141,54 @@ describe("scanProject signal quality heuristics", () => {
     });
   });
 
+  test("collects target blank candidates across quote styles and JSX expressions", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/links.tsx",
+      [
+        "<a href=\"https://example.com\" target='_blank'>single</a>",
+        "<a href=\"https://example.com\" target={'_blank'}>jsx expression</a>",
+        "<a href=\"https://example.com\" target='_blank' rel='noreferrer noopener'>safe single</a>",
+        "<a rel={'noopener noreferrer'} href=\"https://example.com\" target={'_blank'}>safe jsx</a>"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(2);
+    expect(findings.every((finding) => finding.category === "navigation")).toBe(true);
+    expect(findings.map((finding) => finding.evidence.lineNumber)).toEqual([1, 2]);
+  });
+
+  test("skips candidates inside multiline block comments", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/commented.ts",
+      [
+        "/*",
+        "localStorage.getItem('token');",
+        "window.parent.postMessage({ type: 'ready' }, '*');",
+        "*/",
+        "const safe = true;"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(0);
+  });
+
+  test("treats Vue string-only candidates conservatively", async () => {
+    const root = await makeProject();
+    await writeProjectFile(root, "src/Message.vue", "<script setup>const message = 'innerHTML should use textContent';</script>\n");
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(0);
+  });
+
   test("classifies dangerouslySetInnerHTML candidates by local sanitization signals", async () => {
     const root = await makeProject();
     await writeProjectFile(
@@ -165,6 +213,24 @@ describe("scanProject signal quality heuristics", () => {
     expect(findings.map((finding) => finding.risk)).toEqual(["low", "low", "medium"]);
     expect(findings[0].message).toContain("sanitize");
     expect(findings[2].message).toContain("sanitization");
+  });
+
+  test("collects outerHTML and insertAdjacentHTML review candidates", async () => {
+    const root = await makeProject();
+    await writeProjectFile(
+      root,
+      "src/dom.ts",
+      [
+        "element.outerHTML = html;",
+        "element.insertAdjacentHTML('beforeend', html);"
+      ].join("\n")
+    );
+
+    const findings = await scanProject(root);
+
+    expect(findings).toHaveLength(2);
+    expect(findings.map((finding) => finding.category)).toEqual(["html-injection", "html-injection"]);
+    expect(findings.map((finding) => finding.risk)).toEqual(["medium", "medium"]);
   });
 
   test("collects iframe embed and object external content candidates", async () => {
@@ -361,11 +427,14 @@ function finding(
 ): Finding {
   return {
     id,
+    ruleId: `test.${id.toLowerCase()}`,
+    confidence: status === "low_confidence" ? "low" : risk === "high" ? "high" : "medium",
     category: "test",
     risk,
     status,
     title,
     message,
+    recommendation: "Review this test finding in context.",
     evidence: {
       filePath: `src/${id}.ts`,
       lineNumber: 1,

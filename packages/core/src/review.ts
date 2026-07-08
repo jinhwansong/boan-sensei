@@ -9,6 +9,7 @@ import type { BoanMode, Finding, ScanProjectOptions } from "./types.js";
 export interface ReviewWorkflowOptions {
   mode?: BoanMode | string;
   diff?: boolean;
+  checkLatest?: boolean;
   registryFetch?: ScanProjectOptions["registryFetch"];
   top?: number;
 }
@@ -30,6 +31,7 @@ export async function runReviewWorkflow(
     write: true,
     mode,
     diff: options.diff,
+    checkLatest: options.checkLatest,
     registryFetch: options.registryFetch
   });
   const reportFile = REPORT_FILE_BY_MODE[mode];

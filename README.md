@@ -11,7 +11,7 @@ The CLI in `apps/cli` is the local execution engine that adapters call. The main
 ## What boan-sensei Does
 
 - Gives AI coding tools a repeatable frontend security review workflow.
-- Scans frontend files under `src`.
+- Scans frontend files under common frontend roots: `src`, `app`, `pages`, and `components` when they exist.
 - Collects keyword-based code signals such as browser storage, public environment variables, iframe usage, cross-window messaging, and debug output.
 - Writes structured findings to `.boan-sensei/findings.json`.
 - Generates Markdown reports for different review modes.
@@ -44,9 +44,9 @@ Copy or link the adapter file into the location your tool expects. The adapter t
 You can also use the installer scripts:
 
 ```bash
-scripts/install-adapter.sh codex /path/to/project
-scripts/install-adapter.sh cursor /path/to/project
-scripts/install-adapter.sh claude /path/to/skills-root
+sh scripts/install-adapter.sh codex /path/to/project
+sh scripts/install-adapter.sh cursor /path/to/project
+sh scripts/install-adapter.sh claude /path/to/skills-root
 ```
 
 On Windows:
@@ -60,9 +60,9 @@ On Windows:
 For tool-specific plugin bundles:
 
 ```bash
-scripts/install-plugin.sh codex /path/to/codex-plugins
-scripts/install-plugin.sh cursor /path/to/project
-scripts/install-plugin.sh claude /path/to/skills-root
+sh scripts/install-plugin.sh codex /path/to/codex-plugins
+sh scripts/install-plugin.sh cursor /path/to/project
+sh scripts/install-plugin.sh claude /path/to/skills-root
 ```
 
 Windows PowerShell:
@@ -145,12 +145,13 @@ Future package distribution may also support `npx boan-sensei ...`, but npm publ
 
 ## Commands
 
-### `boan-sensei scan [--mode basic|blue|red|purple] [--diff]`
+### `boan-sensei scan [--mode basic|blue|red|purple] [--diff] [--check-latest|--online]`
 
 Scans the current working directory and writes `.boan-sensei/findings.json`.
 Use `--diff` to scan changed supported files from `git diff --name-only`; if Git is unavailable, the scanner falls back to the normal full scan.
+By default, scan runs as local-only static analysis and does not call the npm registry. Use `--check-latest` or `--online` only when you explicitly want latest-version comparison candidates.
 
-The scanner checks `src` files with these extensions:
+The scanner checks files under existing `src`, `app`, `pages`, and `components` directories with these extensions:
 
 - `.js`
 - `.jsx`
@@ -169,7 +170,7 @@ The scanner skips:
 
 Add `.boan-senseiignore` at the project root to skip extra files or directories such as `dist/`, `src/generated/`, or `*.test.ts`.
 
-### `boan-sensei review [--mode basic|blue|red|purple] [--diff]`
+### `boan-sensei review [--mode basic|blue|red|purple] [--diff] [--check-latest|--online]`
 
 Runs `scan`, `report`, and `todo` in order as a single adapter-friendly entry point while keeping the same cautious review-candidate output.
 

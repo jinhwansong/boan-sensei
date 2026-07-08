@@ -72,3 +72,7 @@ Use cautious wording:
 After generating a Markdown report, remind the user that they need to inspect and confirm the findings themselves. The report is supporting material for frontend security review.
 
 Do not create an MCP server for boan-sensei.
+
+## User Review
+
+Before treating any item as actionable, remind the user that each finding is a review candidate and must be inspected in the project context.

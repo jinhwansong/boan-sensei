@@ -43,9 +43,27 @@ export function generateRedReport(findings: Finding[], options: ReportOptions = 
   ].join("\n");
 }
 
+export function getRedQuestion(finding: Finding): string {
+  if (finding.redQuestion) {
+    return finding.redQuestion;
+  }
+  if (finding.category === "secret") {
+    return "Could this secret-like value be reachable from source history, client bundles, logs, or shared artifacts?";
+  }
+  if (finding.category === "cross-window-messaging") {
+    return "Could a message from an untrusted origin reach this handler without an origin allowlist check?";
+  }
+  if (finding.category === "html-injection") {
+    return "Could external or user-controlled HTML reach this render path without a clearly reviewed sanitization step?";
+  }
+  return "Does this code signal connect user-controlled input, public values, or browser boundaries in a way that needs review?";
+}
+
 function renderRedFinding(finding: Finding): string {
+  const redQuestion = getRedQuestion(finding);
   return [
     `### ${finding.id} ${finding.title}`,
+    `- Red question: ${redQuestion}`,
     "",
     `- 위치: \`${finding.evidence.filePath}:${finding.evidence.lineNumber}\``,
     `- 사용 위치 발견: ${finding.message}`,

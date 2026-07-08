@@ -37,6 +37,22 @@ export const DOM_RULES: ScanRule[] = [
     message: "동적으로 삽입되는 HTML이 신뢰 가능한 값인지 확인이 필요합니다."
   },
   {
+    keyword: "outerHTML",
+    category: "html-injection",
+    risk: "medium",
+    title: "outerHTML usage review recommended",
+    message: "HTML rendering review candidate. Verify input source and sanitization path before relying on this render flow.",
+    redQuestion: "Could external or user-controlled HTML reach this render path without a clearly reviewed sanitization step?"
+  },
+  {
+    keyword: "insertAdjacentHTML",
+    category: "html-injection",
+    risk: "medium",
+    title: "insertAdjacentHTML usage review recommended",
+    message: "HTML insertion review candidate. Verify input source and sanitization path before relying on this render flow.",
+    redQuestion: "Could external or user-controlled HTML reach this render path without a clearly reviewed sanitization step?"
+  },
+  {
     keyword: "iframe",
     category: "embedding",
     risk: "medium",
@@ -58,7 +74,7 @@ export const DOM_RULES: ScanRule[] = [
     message: "External content object candidate. Verify source allowlist and embedding policy."
   },
   {
-    keyword: "target=\"_blank\"",
+    pattern: /\btarget\s*=\s*(?:"_blank"|'_blank'|\{\s*["_']_blank["_']\s*\})/i,
     category: "navigation",
     risk: "low",
     title: "target=\"_blank\" 링크 확인 필요",

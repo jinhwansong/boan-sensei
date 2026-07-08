@@ -22,6 +22,32 @@ require_pattern() {
   fi
 }
 
+check_section_headers() {
+  adapter="$1"
+  plugin="$2"
+  label="$3"
+  adapter_headers="$(mktemp)"
+  plugin_headers="$(mktemp)"
+
+  grep '^## ' "$adapter" | sed 's/[[:space:]]*$//' > "$adapter_headers" || true
+  grep '^## ' "$plugin" | sed 's/[[:space:]]*$//' > "$plugin_headers" || true
+
+  while IFS= read -r header; do
+    if [ -z "$header" ]; then
+      continue
+    fi
+    if ! grep -Fxq "$header" "$plugin_headers"; then
+      echo "boan-sensei: missing plugin section header for $label: $header" >&2
+      echo "  adapter: $adapter" >&2
+      echo "  plugin:  $plugin" >&2
+      rm -f "$adapter_headers" "$plugin_headers"
+      exit 1
+    fi
+  done < "$adapter_headers"
+
+  rm -f "$adapter_headers" "$plugin_headers"
+}
+
 check_pair() {
   adapter="$1"
   plugin="$2"
@@ -29,6 +55,7 @@ check_pair() {
 
   check_file "$adapter" "$label adapter"
   check_file "$plugin" "$label plugin"
+  check_section_headers "$adapter" "$plugin" "$label"
 
   for file in "$adapter" "$plugin"; do
     require_pattern "$file" "Review candidate" "Review candidate"

@@ -18,15 +18,16 @@ const command = process.argv[2];
 
 try {
   const mode = resolveMode(getOptionValue("--mode"));
+  const checkLatest = hasOption("--check-latest") || hasOption("--online");
 
   if (command === "scan") {
-    const findings = await scanProject(process.cwd(), { write: true, mode, diff: hasOption("--diff") });
+    const findings = await scanProject(process.cwd(), { write: true, mode, diff: hasOption("--diff"), checkLatest });
     console.log(
       `boan-sensei: ${mode} mode로 점검 후보 ${findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`
     );
     console.log(`보안선생 한마디: ${getSenseiComment(findings)}`);
   } else if (command === "review") {
-    const result = await runReviewWorkflow(process.cwd(), { mode, diff: hasOption("--diff"), top: getNumberOptionValue("--top") });
+    const result = await runReviewWorkflow(process.cwd(), { mode, diff: hasOption("--diff"), checkLatest, top: getNumberOptionValue("--top") });
     console.log(
       `boan-sensei: ${result.mode} mode로 점검 후보 ${result.findings.length}건을 .boan-sensei/findings.json에 저장했습니다.`
     );
@@ -95,8 +96,8 @@ function printHelp() {
   console.log(`boan-sensei v0.1
 
 Usage:
-  boan-sensei scan [--mode basic|blue|red|purple] [--diff]
-  boan-sensei review [--mode basic|blue|red|purple] [--diff] [--top n]
+  boan-sensei scan [--mode basic|blue|red|purple] [--diff] [--check-latest|--online]
+  boan-sensei review [--mode basic|blue|red|purple] [--diff] [--check-latest|--online] [--top n]
   boan-sensei report [--mode basic|blue|red|purple] [--top n]
   boan-sensei todo
   boan-sensei pr-comment`);

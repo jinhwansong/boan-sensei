@@ -49,6 +49,10 @@ boan-sensei scan --mode purple
 boan-sensei report --mode purple
 ```
 
+## Required Language
+
+Keep outputs framed as review candidates, needs-review items, recommended checks, and code signals detected. Do not present results as confirmed security impact.
+
 ## Safety Rules
 
 Do not present output as confirmed security impact.
@@ -69,3 +73,7 @@ Red mode does not perform real attacks, exploitation, bypassing, or penetration 
 After generating reports, tell the user that they must review the findings directly.
 
 Do not create or assume an MCP server for boan-sensei.
+
+## User Confirmation
+
+Before treating any item as actionable, remind the user that each finding is a review candidate and must be inspected in the project context.

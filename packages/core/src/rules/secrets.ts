@@ -34,7 +34,8 @@ export const SECRET_RULES: ScanRule[] = [
     category: "secret",
     risk: "high",
     title: "GitHub token candidate review needed",
-    message: "Hardcoded GitHub token-like value candidate. Verify whether this is a real secret before rotation or exposure review."
+    message: "Hardcoded GitHub token-like value candidate. Verify whether this is a real secret before rotation or exposure review.",
+    redQuestion: "Could this secret-like value be reachable from source history, client bundles, logs, or shared artifacts?"
   },
   {
     pattern: /\b(?:sk_live_|pk_live_)[A-Za-z0-9_]{20,}/,

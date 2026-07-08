@@ -4,11 +4,14 @@ import { generatePrComment, generateReport, generateTodo, type Finding } from ".
 const findings: Finding[] = [
   {
     id: "BS-0001",
+    ruleId: "html-injection.dangerously-set-inner-html",
+    confidence: "high",
     category: "html-injection",
     risk: "high",
     status: "needs_review",
     title: "dangerouslySetInnerHTML 사용 검토 권장",
     message: "렌더링되는 HTML의 출처와 정제 여부를 확인해야 하는 점검 후보입니다.",
+    recommendation: "Verify the HTML input source and sanitization path.",
     evidence: {
       filePath: "src/App.tsx",
       lineNumber: 7,
@@ -22,6 +25,9 @@ describe("generateReport", () => {
     const markdown = generateReport(findings, { projectRoot: "/repo" });
 
     expect(markdown).toContain("# SECURITY_REPORT");
+    expect(markdown).toContain("html-injection.dangerously-set-inner-html");
+    expect(markdown).toContain("confidence");
+    expect(markdown).toContain("Verify the HTML input source and sanitization path.");
     expect(markdown).toContain("## 1. 개요");
     expect(markdown).toContain("## 2. 점검 범위");
     expect(markdown).toContain("## 3. 점검 결과 요약");
@@ -31,6 +37,23 @@ describe("generateReport", () => {
     expect(markdown).toContain("침투 테스트/보안 인증/전문 보안 진단을 대체하지 않습니다");
     expect(markdown).toContain("점검 후보");
   });
+
+  test("renders category-specific red questions in red and purple reports", () => {
+    const categoryFindings: Finding[] = [
+      finding("BS-0100", "secret"),
+      finding("BS-0101", "cross-window-messaging"),
+      finding("BS-0102", "html-injection")
+    ];
+
+    const red = generateReport(categoryFindings, { mode: "red", projectRoot: "/repo" });
+    const purple = generateReport(categoryFindings, { mode: "purple", projectRoot: "/repo" });
+
+    for (const markdown of [red, purple]) {
+      expect(markdown).toContain("secret-like value");
+      expect(markdown).toContain("untrusted origin");
+      expect(markdown).toContain("user-controlled HTML");
+    }
+  });
 });
 
 describe("generatePrComment", () => {
@@ -38,11 +61,14 @@ describe("generatePrComment", () => {
     const comment = generatePrComment([
       {
         id: "BS-0002",
+        ruleId: "secret.hardcoded-candidate",
+        confidence: "high",
         category: "secret",
         risk: "high",
         status: "needs_review",
         title: "하드코딩 시크릿 후보 확인 필요",
         message: "하드코딩 시크릿 후보입니다. 실제 유효성은 확인이 필요합니다.",
+        recommendation: "Verify whether this value is a real secret and move it to managed configuration if needed.",
         evidence: {
           filePath: "src/config.ts",
           lineNumber: 3,
@@ -54,10 +80,31 @@ describe("generatePrComment", () => {
     expect(comment).toContain("## boan-sensei PR review candidates");
     expect(comment).toContain("High review candidates: 1");
     expect(comment).toContain("BS-0002");
+    expect(comment).toContain("secret.hardcoded-candidate");
+    expect(comment).toContain("Verify whether this value is a real secret");
     expect(comment).toContain("점검 후보");
     expect(comment).not.toContain("취약점 발견");
   });
 });
+
+function finding(id: string, category: string): Finding {
+  return {
+    id,
+    ruleId: `${category}.test`,
+    confidence: "medium",
+    category,
+    risk: category === "secret" ? "high" : "medium",
+    status: "needs_review",
+    title: `${category} candidate`,
+    message: `${category} review candidate. Confirm project context before changing code.`,
+    recommendation: "Review this candidate in project context.",
+    evidence: {
+      filePath: "src/example.ts",
+      lineNumber: 1,
+      linePreview: category
+    }
+  };
+}
 
 describe("feedback guidance", () => {
   test("adds false positive feedback guidance to generated outputs", () => {

@@ -50,6 +50,13 @@ boan-sensei scan --mode purple
 boan-sensei report --mode purple
 ```
 
+## Modes
+
+- `basic`: collect general frontend security review candidates.
+- `blue`: organize candidates as defensive checks and developer follow-up.
+- `red`: summarize attacker-perspective review questions without real attacks, bypassing, exploitation, or penetration testing.
+- `purple`: pair red review questions with blue defensive checks.
+
 ## Language Rules
 
 Use cautious language:
@@ -68,3 +75,7 @@ Red mode does not perform real attacks, exploitation, bypassing, or penetration 
 After generating a report, tell the user that they must review the findings directly.
 
 Do not create or assume an MCP server for boan-sensei.
+
+## User Confirmation
+
+Before treating any item as actionable, remind the user that each finding is a review candidate and must be inspected in the project context.

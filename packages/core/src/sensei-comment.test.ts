@@ -4,9 +4,12 @@ import { getSenseiComment, type Finding } from "./index.js";
 function finding(overrides: Partial<Finding>): Finding {
   return {
     id: "BS-0001",
+    ruleId: "browser-storage.local-storage",
+    confidence: "medium",
     category: "browser-storage",
     risk: "medium",
     status: "needs_review",
+    recommendation: "Verify browser storage usage in project context.",
     title: "localStorage 사용 검토 권장",
     message: "브라우저 저장소에 민감 정보가 저장되는지 확인해야 하는 점검 후보입니다.",
     evidence: {
